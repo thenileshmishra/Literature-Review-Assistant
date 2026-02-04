@@ -1,0 +1,156 @@
+"""Review service wrapping AutoGen orchestrator"""
+
+import asyncio
+import logging
+import re
+from typing import AsyncGenerator, Dict, Any
+from datetime import datetime
+
+from src.orchestrator.litrev_orchestrator import run_litrev
+from src.core.exceptions import LitRevError
+from backend.app.models.responses import ReviewStatus
+from backend.app.services.session_manager import SessionManager
+
+logger = logging.getLogger(__name__)
+
+
+class ReviewService:
+    """Service for managing literature reviews using AutoGen"""
+
+    def __init__(self, session_manager: SessionManager):
+        self.session_manager = session_manager
+
+    async def start_review(
+        self,
+        session_id: str,
+        topic: str,
+        num_papers: int,
+        model: str = "gpt-4o-mini"
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        """
+        Start a literature review and stream messages
+
+        Args:
+            session_id: Session ID for tracking
+            topic: Research topic
+            num_papers: Number of papers to find
+            model: LLM model to use
+
+        Yields:
+            Dictionary with message data
+        """
+        try:
+            # Update status to in_progress
+            self.session_manager.update_status(session_id, ReviewStatus.IN_PROGRESS)
+
+            logger.info(f"Starting review {session_id}: topic='{topic}', papers={num_papers}, model={model}")
+
+            # Run AutoGen orchestrator
+            async for message_str in run_litrev(
+                topic=topic,
+                num_papers=num_papers,
+                model=model
+            ):
+                # Parse message in "source: content" format
+                parsed = self._parse_message(message_str)
+
+                if parsed:
+                    source = parsed["source"]
+                    content = parsed["content"]
+
+                    # Determine message type
+                    message_type = self._determine_message_type(source, content)
+
+                    # Store in session
+                    self.session_manager.add_message(
+                        session_id=session_id,
+                        source=source,
+                        content=content,
+                        message_type=message_type
+                    )
+
+                    # Extract papers if search agent message
+                    if source == "search_agent" and "papers" in content.lower():
+                        self._extract_papers(session_id, content)
+
+                    # Yield message for streaming
+                    yield {
+                        "source": source,
+                        "content": content,
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "message_type": message_type
+                    }
+
+            # Mark as completed
+            self.session_manager.update_status(session_id, ReviewStatus.COMPLETED)
+            logger.info(f"Completed review {session_id}")
+
+            # Yield completion event
+            yield {
+                "type": "complete",
+                "session_id": session_id,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+
+        except LitRevError as e:
+            logger.error(f"LitRevError in review {session_id}: {e}")
+            self.session_manager.update_status(session_id, ReviewStatus.FAILED)
+            self.session_manager.add_message(
+                session_id=session_id,
+                source="system",
+                content=f"Error: {str(e)}",
+                message_type="error"
+            )
+            yield {
+                "type": "error",
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat()
+            }
+
+        except Exception as e:
+            logger.error(f"Unexpected error in review {session_id}: {e}", exc_info=True)
+            self.session_manager.update_status(session_id, ReviewStatus.FAILED)
+            self.session_manager.add_message(
+                session_id=session_id,
+                source="system",
+                content=f"Unexpected error: {str(e)}",
+                message_type="error"
+            )
+            yield {
+                "type": "error",
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat()
+            }
+
+    def _parse_message(self, message_str: str) -> Dict[str, str]:
+        """Parse message in 'source: content' format"""
+        # Match pattern: "source: content"
+        match = re.match(r'^([^:]+):\s*(.*)$', message_str.strip())
+        if match:
+            return {
+                "source": match.group(1).strip(),
+                "content": match.group(2).strip()
+            }
+        # Fallback: treat as system message
+        return {
+            "source": "system",
+            "content": message_str.strip()
+        }
+
+    def _determine_message_type(self, source: str, content: str) -> str:
+        """Determine message type based on source and content"""
+        if source == "search_agent":
+            return "search"
+        elif source == "summarizer":
+            return "summary"
+        elif "error" in content.lower():
+            return "error"
+        return "system"
+
+    def _extract_papers(self, session_id: str, content: str) -> None:
+        """Extract paper information from search agent message"""
+        # This is a simplified extraction - in reality, AutoGen returns structured data
+        # For now, we'll just log that papers were found
+        # The actual paper extraction happens in the AutoGen agents
+        logger.debug(f"Papers found in session {session_id}")
+        # TODO: Implement proper paper extraction from AutoGen response
