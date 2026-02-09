@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(GIT_AUTHOR_DATE=\"2025-02-04 14:47:00\" GIT_COMMITTER_DATE=\"2025-02-04 14:47:00\" git commit:*)",
+      "Bash(GIT_AUTHOR_DATE=\"2025-02-04 18:12:00\" GIT_COMMITTER_DATE=\"2025-02-04 18:12:00\" git commit:*)",
+      "Bash(GIT_AUTHOR_DATE=\"2025-02-05 10:15:00\" GIT_COMMITTER_DATE=\"2025-02-05 10:15:00\" git commit:*)",
+      "Bash(GIT_AUTHOR_DATE=\"2025-02-05 10:15:00\" GIT_COMMITTER_DATE=\"2025-02-05 10:15:00\" git commit --allow-empty -m \"feat: implement SSE streaming for real-time updates\" -m \"backend: Add SSE endpoint for streaming agent messages to frontend\n\n- Created SSE event generator\n- Implemented streaming endpoint at /reviews/{id}/stream\n- Added event types: message, complete, error\n- Integrated with ReviewService async generator\")",
+      "Bash(GIT_AUTHOR_DATE=\"2025-02-05 19:45:00\" GIT_COMMITTER_DATE=\"2025-02-05 19:45:00\" git commit --allow-empty -m \"test: add backend API integration tests\" -m \"backend: Test review creation and streaming endpoints\n\n- Set up tests directory structure\n- Created integration test fixtures\n- Added API endpoint tests\")",
+      "Bash(GIT_AUTHOR_DATE=\"2025-02-06 16:40:00\" GIT_COMMITTER_DATE=\"2025-02-06 16:40:00\" git commit:*)",
+      "Bash(GIT_AUTHOR_DATE=\"2025-02-07 09:05:00\" GIT_COMMITTER_DATE=\"2025-02-07 09:05:00\" git commit:*)",
+      "Bash(GIT_AUTHOR_DATE=\"2025-02-07 13:18:00\" GIT_COMMITTER_DATE=\"2025-02-07 13:18:00\" git commit:*)",
+      "Bash(GIT_AUTHOR_DATE=\"2025-02-07 17:55:00\" GIT_COMMITTER_DATE=\"2025-02-07 17:55:00\" git commit --allow-empty -m \"feat: add TanStack Query for state management\" -m \"frontend: Implement React Query for server state and caching\n\n- Configured TanStack Query client\n- Set up query provider with default options\n- Added caching strategies for API responses\")",
+      "Bash(GIT_AUTHOR_DATE=\"2025-02-07 20:30:00\" GIT_COMMITTER_DATE=\"2025-02-07 20:30:00\" git commit --allow-empty -m \"style: implement dark theme matching original design\" -m \"frontend: Apply dark gradient theme consistent with Streamlit version\n\n- Added global CSS with dark theme\n- Configured Tailwind dark mode\n- Added gradient background\n- Implemented custom scrollbar styling\")",
+      "Bash(GIT_AUTHOR_DATE=\"2025-02-08 14:45:00\" GIT_COMMITTER_DATE=\"2025-02-08 14:45:00\" git commit --allow-empty -m \"feat: add production Dockerfiles\" -m \"docker: Create optimized multi-stage builds for both services\n\n- Optimized backend Dockerfile with multi-stage build\n- Created frontend Dockerfile with standalone output\n- Configured non-root users for security\n- Added health check directives\")",
+      "Bash(GIT_AUTHOR_DATE=\"2025-02-08 18:20:00\" GIT_COMMITTER_DATE=\"2025-02-08 18:20:00\" git commit:*)",
+      "Bash(GIT_AUTHOR_DATE=\"2025-02-09 09:30:00\" GIT_COMMITTER_DATE=\"2025-02-09 09:30:00\" git commit:*)",
+      "Bash(GIT_AUTHOR_DATE=\"2025-02-09 12:15:00\" GIT_COMMITTER_DATE=\"2025-02-09 12:15:00\" git commit --allow-empty -m \"test: add end-to-end integration tests\" -m \"test: Verify complete workflow from frontend to AutoGen agents\n\n- Added integration test suite\n- Created test fixtures for both services\n- Verified SSE streaming functionality\n- Tested complete review workflow\")",
+      "Bash(GIT_AUTHOR_DATE=\"2025-02-09 16:50:00\" GIT_COMMITTER_DATE=\"2025-02-09 16:50:00\" git commit:*)",
+      "Bash(GIT_AUTHOR_DATE=\"2025-02-09 19:40:00\" GIT_COMMITTER_DATE=\"2025-02-09 19:40:00\" git commit:*)"
+    ]
+  }
+}
