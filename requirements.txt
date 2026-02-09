@@ -1,0 +1,25 @@
+# =============================================================================
+# Production Dependencies
+# =============================================================================
+# Literature Review Assistant
+# =============================================================================
+
+# AutoGen Agent Framework
+autogen-agentchat>=0.4.0
+autogen-core>=0.4.0
+autogen-ext[openai]>=0.4.0
+
+# LLM & AI
+openai>=1.0.0
+tiktoken>=0.5.0
+
+# Data Sources
+arxiv>=2.0.0
+
+# Configuration
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Utilities
+httpx>=0.25.0
