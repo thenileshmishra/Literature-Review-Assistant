@@ -13,21 +13,42 @@ import { useReviewStream } from '@/lib/hooks/useReviewStream'
 const { Content } = Layout
 const { Text } = Typography
 const { defaultAlgorithm, darkAlgorithm } = antdTheme
+const THEME_KEY = 'app-theme'
 
 export default function Home() {
   const [reviewId, setReviewId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('dark')
+  const [themeInitialized, setThemeInitialized] = useState(false)
   const [model, setModel] = useState('gpt-4o-mini')
 
   const { messages, status, isStreaming, error: streamError, startStream } = useReviewStream(reviewId)
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    const saved = localStorage.getItem(THEME_KEY)
+    if (saved === 'light' || saved === 'dark') {
+      setThemeMode(saved)
+      setThemeInitialized(true)
+      return
+    }
+
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+    setThemeMode(prefersDark ? 'dark' : 'light')
+    setThemeInitialized(true)
+  }, [])
+
+  useEffect(() => {
+    if (!themeInitialized) return
     const root = document.documentElement
     root.classList.toggle('dark', themeMode === 'dark')
     root.classList.toggle('light', themeMode === 'light')
-  }, [themeMode])
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(THEME_KEY, themeMode)
+    }
+  }, [themeMode, themeInitialized])
 
   const handleSubmit = async (request: CreateReviewRequest) => {
     try {
