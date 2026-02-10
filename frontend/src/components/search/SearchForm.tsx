@@ -21,12 +21,6 @@ interface SearchFormProps {
   model: string
 }
 
-const EXAMPLE_TOPICS = [
-  'machine learning in healthcare',
-  'quantum computing algorithms',
-  'climate change mitigation strategies',
-  'neural networks for NLP',
-]
 
 export function SearchForm({ onSubmit, isLoading = false, model }: SearchFormProps) {
   const [form] = Form.useForm()
@@ -42,7 +36,7 @@ export function SearchForm({ onSubmit, isLoading = false, model }: SearchFormPro
 
     onSubmit({
       topic: values.topic.trim(),
-      num_papers: values.numPapers,
+      num_papers: 5,
       model,
     })
   }
@@ -74,49 +68,13 @@ export function SearchForm({ onSubmit, isLoading = false, model }: SearchFormPro
             ]}
           >
             <Input
-              placeholder="e.g., graph neural networks for drug discovery"
+              placeholder="e.g., Graph-Based Memory for AI Agents"
               disabled={isLoading}
               size="large"
               prefix={<SearchOutlined />}
             />
           </Form.Item>
 
-          <div className="hint-row">
-            <Text type="secondary">Try:</Text>
-            <Space wrap>
-              {EXAMPLE_TOPICS.map((example) => (
-                <Button
-                  key={example}
-                  type="text"
-                  size="small"
-                  disabled={isLoading}
-                  className="hint-chip"
-                  onClick={() => form.setFieldsValue({ topic: example })}
-                >
-                  {example}
-                </Button>
-              ))}
-            </Space>
-          </div>
-
-          {/* Number of Papers */}
-          <Form.Item
-            label="Number of papers"
-            name="numPapers"
-            rules={[
-              { required: true },
-              {
-                type: 'number',
-                min: 1,
-                max: 10,
-                message: 'Must be between 1 and 10',
-              },
-            ]}
-          >
-            <Slider min={1} max={10} disabled={isLoading} />
-          </Form.Item>
-
-          {/* Error Message */}
           {error && <Alert type="error" message={error} showIcon />}
 
           {/* Submit Button */}
