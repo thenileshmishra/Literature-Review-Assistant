@@ -230,14 +230,14 @@ export function MessageDisplay({ messages, status }: MessageDisplayProps) {
       ? Math.round((processedPapers / totalPapers) * 100)
       : 0
 
-  if (status === 'completed' && summaryMessages.length > 0) {
-  return (
-    <SummaryCard
-      summaries={[summaryMessages[summaryMessages.length - 1]]}
-    />
-  )
-}
+  if (status === 'completed') {
+  const lastSummary =
+    summaryMessages.length > 0
+      ? [summaryMessages[summaryMessages.length - 1]]
+      : []
 
+  return <SummaryCard summaries={lastSummary} />
+}
 
 
   if (status === 'failed') {
