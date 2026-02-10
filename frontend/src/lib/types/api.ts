@@ -23,8 +23,6 @@ export interface Paper {
 
 export interface CreateReviewRequest {
   topic: string
-  num_papers: number
-  model?: string
 }
 
 export interface ReviewResponse {
@@ -32,8 +30,8 @@ export interface ReviewResponse {
   status: ReviewStatus
   request: {
     topic: string
-    num_papers: number
-    model: string
+    papers_limit: number
+    model?: string
   }
   messages: Message[]
   papers: Paper[]

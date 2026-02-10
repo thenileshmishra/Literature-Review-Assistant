@@ -3,14 +3,14 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from typing import List
 import logging
-import asyncio
-
 from backend.app.models.requests import CreateReviewRequest
-from backend.app.models.responses import ReviewResponse, ReviewStatus
+from backend.app.models.responses import ReviewResponse
 from backend.app.services import get_session_manager, ReviewService
+from src.config.settings import get_settings
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+settings = get_settings()
 
 
 @router.post("/reviews", response_model=ReviewResponse, status_code=201)
@@ -27,10 +27,12 @@ async def create_review(
     session_manager = get_session_manager()
 
     # Create session
+    papers_limit = settings.papers_per_review
+    model = settings.default_model
     session = session_manager.create_session(
         topic=request.topic,
-        num_papers=request.num_papers,
-        model=request.model
+        papers_limit=papers_limit,
+        model=model,
     )
 
     logger.info(f"Created review session {session.id}")
@@ -44,8 +46,8 @@ async def create_review(
             async for _ in review_service.start_review(
                 session_id=session.id,
                 topic=request.topic,
-                num_papers=request.num_papers,
-                model=request.model
+                papers_limit=papers_limit,
+                model=model,
             ):
                 pass  # Messages are stored in session manager
         except Exception as e:

@@ -6,7 +6,6 @@ import {
   Form,
   Input,
   Button,
-  Slider,
   Alert,
   Space,
   Typography,
@@ -18,11 +17,10 @@ const { Title, Text } = Typography
 interface SearchFormProps {
   onSubmit: (request: CreateReviewRequest) => void
   isLoading?: boolean
-  model: string
 }
 
 
-export function SearchForm({ onSubmit, isLoading = false, model }: SearchFormProps) {
+export function SearchForm({ onSubmit, isLoading = false }: SearchFormProps) {
   const [form] = Form.useForm()
   const [error, setError] = useState('')
 
@@ -36,8 +34,6 @@ export function SearchForm({ onSubmit, isLoading = false, model }: SearchFormPro
 
     onSubmit({
       topic: values.topic.trim(),
-      num_papers: 5,
-      model,
     })
   }
 
@@ -54,9 +50,6 @@ export function SearchForm({ onSubmit, isLoading = false, model }: SearchFormPro
         <Form
           form={form}
           layout="vertical"
-          initialValues={{
-            numPapers: 5,
-          }}
           onFinish={handleFinish}
         >
           {/* Topic Input */}

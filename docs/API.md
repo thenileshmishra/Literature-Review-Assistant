@@ -49,16 +49,13 @@ Create a new literature review.
 **Request Body:**
 ```json
 {
-  "topic": "machine learning in healthcare",
-  "num_papers": 5,
-  "model": "gpt-4o-mini"
+  "topic": "graph neural networks"
 }
 ```
 
 **Parameters:**
 - `topic` (string, required): Research topic (3-500 characters)
-- `num_papers` (integer, optional): Number of papers to find (1-10, default: 5)
-- `model` (string, optional): LLM model to use (default: "gpt-4o-mini")
+- The backend always retrieves exactly 5 papers per request.
 
 **Response (201 Created):**
 ```json
@@ -66,8 +63,8 @@ Create a new literature review.
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "pending",
   "request": {
-    "topic": "machine learning in healthcare",
-    "num_papers": 5,
+    "topic": "graph neural networks",
+    "papers_limit": 5,
     "model": "gpt-4o-mini"
   },
   "messages": [],
@@ -87,8 +84,8 @@ Get review details by ID.
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "completed",
   "request": {
-    "topic": "machine learning in healthcare",
-    "num_papers": 5,
+    "topic": "graph neural networks",
+    "papers_limit": 5,
     "model": "gpt-4o-mini"
   },
   "messages": [

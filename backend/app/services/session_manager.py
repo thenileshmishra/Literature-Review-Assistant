@@ -20,8 +20,8 @@ class SessionManager:
     def create_session(
         self,
         topic: str,
-        num_papers: int,
-        model: str
+        papers_limit: int,
+        model: str,
     ) -> ReviewResponse:
         """Create a new review session"""
         # Generate unique ID
@@ -33,7 +33,7 @@ class SessionManager:
             status=ReviewStatus.PENDING,
             request={
                 "topic": topic,
-                "num_papers": num_papers,
+                "papers_limit": papers_limit,
                 "model": model
             },
             messages=[],

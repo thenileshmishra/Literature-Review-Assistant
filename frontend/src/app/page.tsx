@@ -21,7 +21,6 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('dark')
   const [themeInitialized, setThemeInitialized] = useState(false)
-  const [model, setModel] = useState('gpt-4o-mini')
 
   const { messages, status, isStreaming, error: streamError, startStream } = useReviewStream(reviewId)
 
@@ -59,11 +58,6 @@ export default function Home() {
       const review = await createReview(request)
       setReviewId(review.id)
 
-      // Start streaming
-      setTimeout(() => {
-        startStream()
-      }, 500)
-
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to create review')
       console.error('Error creating review:', err)
@@ -71,6 +65,11 @@ export default function Home() {
       setIsCreating(false)
     }
   }
+
+  useEffect(() => {
+    if (!reviewId) return
+    startStream()
+  }, [reviewId, startStream])
 
   const handleNewSearch = () => {
     setReviewId(null)
@@ -90,8 +89,6 @@ export default function Home() {
     >
       <Layout className="app-shell">
         <Header
-          model={model}
-          onModelChange={setModel}
           themeMode={themeMode}
           onThemeChange={setThemeMode}
         />
@@ -99,7 +96,7 @@ export default function Home() {
         <Content className="app-content">
           <div className="content-wrap">
             {!reviewId ? (
-              <SearchForm onSubmit={handleSubmit} isLoading={isCreating} model={model} />
+              <SearchForm onSubmit={handleSubmit} isLoading={isCreating} />
             ) : (
               <div className="space-y-6">
                 <Button type="link" onClick={handleNewSearch} className="px-0">
