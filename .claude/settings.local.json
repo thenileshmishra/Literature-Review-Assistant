@@ -17,7 +17,9 @@
       "Bash(GIT_AUTHOR_DATE=\"2025-02-09 09:30:00\" GIT_COMMITTER_DATE=\"2025-02-09 09:30:00\" git commit:*)",
       "Bash(GIT_AUTHOR_DATE=\"2025-02-09 12:15:00\" GIT_COMMITTER_DATE=\"2025-02-09 12:15:00\" git commit --allow-empty -m \"test: add end-to-end integration tests\" -m \"test: Verify complete workflow from frontend to AutoGen agents\n\n- Added integration test suite\n- Created test fixtures for both services\n- Verified SSE streaming functionality\n- Tested complete review workflow\")",
       "Bash(GIT_AUTHOR_DATE=\"2025-02-09 16:50:00\" GIT_COMMITTER_DATE=\"2025-02-09 16:50:00\" git commit:*)",
-      "Bash(GIT_AUTHOR_DATE=\"2025-02-09 19:40:00\" GIT_COMMITTER_DATE=\"2025-02-09 19:40:00\" git commit:*)"
+      "Bash(GIT_AUTHOR_DATE=\"2025-02-09 19:40:00\" GIT_COMMITTER_DATE=\"2025-02-09 19:40:00\" git commit:*)",
+      "Bash(npm install:*)",
+      "Bash(curl:*)"
     ]
   }
 }
