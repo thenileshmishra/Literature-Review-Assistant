@@ -1,9 +1,10 @@
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Space_Grotesk } from "next/font/google"
+import "antd/dist/reset.css"
 import "./globals.css"
 import { QueryProvider } from "@/providers/QueryProvider"
 
-const inter = Inter({ subsets: ["latin"] })
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Literature Review Assistant",
@@ -16,8 +17,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={inter.className}>
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <body className={spaceGrotesk.className}>
         <QueryProvider>
           <main className="min-h-screen">
             {children}
