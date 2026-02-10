@@ -117,12 +117,12 @@ User → Frontend → Backend → AutoGen
 ```
 
 **Steps:**
-1. User submits search form (topic, num_papers, model)
+1. User submits a search form with a topic
 2. Frontend sends POST to `/api/v1/reviews`
 3. Backend creates session and returns review ID
 4. Frontend connects to SSE stream at `/api/v1/reviews/{id}/stream`
 5. Backend starts AutoGen orchestrator
-6. SearchAgent queries arXiv and returns papers
+6. SearchAgent queries arXiv and returns 5 papers
 7. SummarizerAgent generates literature review
 8. Messages stream back to frontend via SSE
 9. Session marked as completed

@@ -80,7 +80,7 @@ class LitRevOrchestrator:
 
         Args:
             topic: Research topic to review
-            num_papers: Number of papers to include
+            num_papers: Deprecated (fixed to settings.papers_per_review)
 
         Yields:
             str: Streaming message content as "source: content"
@@ -90,7 +90,8 @@ class LitRevOrchestrator:
             >>> async for msg in orchestrator.run_review("neural networks", 5):
             ...     print(msg)
         """
-        logger.info(f"Starting review: topic='{topic}', papers={num_papers}")
+        papers_limit = self.settings.papers_per_review
+        logger.info(f"Starting review: topic='{topic}', papers={papers_limit}")
 
         team = LitRevTeam(
             model=self.model,
@@ -99,7 +100,7 @@ class LitRevOrchestrator:
 
         task_prompt = (
             f"Conduct a literature review on '{topic}' "
-            f"and return {num_papers} papers."
+            f"and return {papers_limit} papers."
         )
 
         async for msg in team.run_stream(task=task_prompt):
@@ -125,7 +126,7 @@ async def run_litrev(
 
     Args:
         topic: Research topic to review
-        num_papers: Number of papers to include
+        num_papers: Deprecated (fixed to settings.papers_per_review)
         model: LLM model to use
 
     Yields:
@@ -141,22 +142,3 @@ async def run_litrev(
         yield msg
 
 
-# ===============================================================
-# CLI TESTING
-# ===============================================================
-
-if __name__ == "__main__":
-    import asyncio
-    from dotenv import load_dotenv
-
-    load_dotenv()
-
-    async def _demo() -> None:
-        async for line in run_litrev(
-            "graph neural networks for chemistry",
-            num_papers=3,
-        ):
-            print(line)
-            print("-" * 50)
-
-    asyncio.run(_demo())

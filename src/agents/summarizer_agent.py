@@ -84,21 +84,3 @@ class SummarizerAgent(BaseAgent):
         return self.DEFAULT_SYSTEM_MESSAGE
 
 
-# ===============================================================
-# CLI TESTING
-# ===============================================================
-
-if __name__ == "__main__":
-    import os
-    from dotenv import load_dotenv
-
-    load_dotenv()
-
-    agent = SummarizerAgent(
-        model="gpt-4o-mini",
-        api_key=os.getenv("OPENAI_API_KEY", ""),
-    )
-
-    built_agent = agent.build()
-    print(f"Built agent: {built_agent.name}")
-    print(f"Description: {agent.description}")

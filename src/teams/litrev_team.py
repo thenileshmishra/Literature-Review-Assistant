@@ -141,26 +141,3 @@ class LitRevTeam(BaseTeam):
             )
 
 
-# ===============================================================
-# CLI TESTING
-# ===============================================================
-
-if __name__ == "__main__":
-    import os
-    import asyncio
-    from dotenv import load_dotenv
-
-    load_dotenv()
-
-    async def _test():
-        team = LitRevTeam(
-            model="gpt-4o-mini",
-            api_key=os.getenv("OPENAI_API_KEY", ""),
-        )
-
-        async for msg in team.run_stream(
-            "Find 3 papers about transformer architectures"
-        ):
-            print(msg[:100])
-
-    asyncio.run(_test())

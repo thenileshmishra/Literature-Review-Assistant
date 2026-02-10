@@ -9,7 +9,6 @@ for the literature review assistant application.
 
 from __future__ import annotations
 
-import os
 from functools import lru_cache
 from typing import Literal
 
@@ -28,8 +27,7 @@ class Settings(BaseSettings):
     Attributes:
         openai_api_key: OpenAI API key for LLM access
         default_model: Default model to use for agents
-        max_papers: Maximum number of papers allowed per search
-        default_papers: Default number of papers to fetch
+        papers_per_review: Fixed number of papers per review
         log_level: Logging verbosity level
         app_name: Application display name
         app_version: Application version string
@@ -55,18 +53,12 @@ class Settings(BaseSettings):
     )
 
     # Search Configuration
-    max_papers: int = Field(
-        default=10,
-        ge=1,
-        le=50,
-        description="Maximum papers per search",
-    )
-
-    default_papers: int = Field(
+    papers_per_review: int = Field(
         default=5,
-        ge=1,
-        le=10,
-        description="Default number of papers",
+        ge=5,
+        le=5,
+        validation_alias="PAPERS_PER_REVIEW",
+        description="Fixed number of papers per review",
     )
 
     # Logging Configuration
@@ -110,13 +102,3 @@ def get_settings() -> Settings:
     return Settings()
 
 
-# ===============================================================
-# CLI TESTING
-# ===============================================================
-
-if __name__ == "__main__":
-    settings = get_settings()
-    print(f"App: {settings.app_name} v{settings.app_version}")
-    print(f"Model: {settings.default_model}")
-    print(f"Debug: {settings.debug}")
-    print(f"Log Level: {settings.log_level}")

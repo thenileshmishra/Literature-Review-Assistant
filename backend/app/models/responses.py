@@ -25,7 +25,7 @@ class MessageResponse(BaseModel):
         json_schema_extra = {
             "example": {
                 "source": "search_agent",
-                "content": "Found 5 relevant papers on quantum computing",
+                "content": "Found 5 relevant papers on graph neural networks",
                 "timestamp": "2025-02-10T10:30:00Z",
                 "message_type": "search"
             }
@@ -43,10 +43,10 @@ class PaperResponse(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "title": "Quantum Computing: A Gentle Introduction",
+                "title": "Graph Neural Networks: A Practical Introduction",
                 "authors": ["John Doe", "Jane Smith"],
                 "published": "2024-01-15",
-                "summary": "This paper provides an overview of quantum computing...",
+                "summary": "This paper provides an overview of graph neural networks...",
                 "pdf_url": "https://arxiv.org/pdf/2401.12345.pdf"
             }
         }
@@ -68,8 +68,8 @@ class ReviewResponse(BaseModel):
                 "id": "550e8400-e29b-41d4-a716-446655440000",
                 "status": "completed",
                 "request": {
-                    "topic": "quantum computing",
-                    "num_papers": 5,
+                    "topic": "graph neural networks",
+                    "papers_limit": 5,
                     "model": "gpt-4o-mini"
                 },
                 "messages": [],

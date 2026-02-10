@@ -1,8 +1,8 @@
 """Review service wrapping AutoGen orchestrator"""
 
-import asyncio
 import logging
 import re
+import json
 from typing import AsyncGenerator, Dict, Any
 from datetime import datetime
 
@@ -24,7 +24,7 @@ class ReviewService:
         self,
         session_id: str,
         topic: str,
-        num_papers: int,
+        papers_limit: int,
         model: str = "gpt-4o-mini"
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
@@ -33,7 +33,7 @@ class ReviewService:
         Args:
             session_id: Session ID for tracking
             topic: Research topic
-            num_papers: Number of papers to find
+            papers_limit: Number of papers to find
             model: LLM model to use
 
         Yields:
@@ -43,12 +43,12 @@ class ReviewService:
             # Update status to in_progress
             self.session_manager.update_status(session_id, ReviewStatus.IN_PROGRESS)
 
-            logger.info(f"Starting review {session_id}: topic='{topic}', papers={num_papers}, model={model}")
+            logger.info(f"Starting review {session_id}: topic='{topic}', papers={papers_limit}, model={model}")
 
             # Run AutoGen orchestrator
             async for message_str in run_litrev(
                 topic=topic,
-                num_papers=num_papers,
+                num_papers=papers_limit,
                 model=model
             ):
                 # Parse message in "source: content" format
@@ -70,7 +70,7 @@ class ReviewService:
                     )
 
                     # Extract papers if search agent message
-                    if source == "search_agent" and "papers" in content.lower():
+                    if source == "search_agent":
                         self._extract_papers(session_id, content)
 
                     # Yield message for streaming
@@ -149,8 +149,51 @@ class ReviewService:
 
     def _extract_papers(self, session_id: str, content: str) -> None:
         """Extract paper information from search agent message"""
-        # This is a simplified extraction - in reality, AutoGen returns structured data
-        # For now, we'll just log that papers were found
-        # The actual paper extraction happens in the AutoGen agents
-        logger.debug(f"Papers found in session {session_id}")
-        # TODO: Implement proper paper extraction from AutoGen response
+        payload = self._parse_papers_payload(content)
+        if not payload:
+            return
+
+        for paper in payload:
+            if not isinstance(paper, dict):
+                continue
+
+            title = paper.get("title")
+            authors = paper.get("authors")
+            published = paper.get("published")
+            summary = paper.get("summary")
+            pdf_url = paper.get("pdf_url")
+
+            if not all([title, authors, published, summary, pdf_url]):
+                continue
+
+            self.session_manager.add_paper(
+                session_id=session_id,
+                title=title,
+                authors=authors,
+                published=published,
+                summary=summary,
+                pdf_url=pdf_url,
+            )
+
+    def _parse_papers_payload(self, content: str) -> list | None:
+        """Parse a JSON payload of papers from an agent message."""
+        candidates = []
+
+        fenced_match = re.search(r"```json\s*([\s\S]*?)\s*```", content, re.IGNORECASE)
+        if fenced_match:
+            candidates.append(fenced_match.group(1))
+
+        candidates.append(content)
+
+        for candidate in candidates:
+            try:
+                parsed = json.loads(candidate)
+            except json.JSONDecodeError:
+                continue
+
+            if isinstance(parsed, list):
+                return parsed
+            if isinstance(parsed, dict) and isinstance(parsed.get("papers"), list):
+                return parsed["papers"]
+
+        return None

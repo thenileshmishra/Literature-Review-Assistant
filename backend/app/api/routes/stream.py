@@ -1,15 +1,17 @@
 """SSE streaming endpoints"""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from sse_starlette.sse import EventSourceResponse
 import logging
 import json
 from typing import AsyncGenerator
 
 from backend.app.services import get_session_manager, ReviewService
+from src.config.settings import get_settings
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+settings = get_settings()
 
 
 async def review_event_generator(review_id: str) -> AsyncGenerator:
@@ -35,8 +37,8 @@ async def review_event_generator(review_id: str) -> AsyncGenerator:
     # Get request parameters from session
     request = session.request
     topic = request.get("topic")
-    num_papers = request.get("num_papers", 5)
-    model = request.get("model", "gpt-4o-mini")
+    papers_limit = request.get("papers_limit", settings.papers_per_review)
+    model = request.get("model", settings.default_model)
 
     logger.info(f"Starting SSE stream for review {review_id}")
 
@@ -45,7 +47,7 @@ async def review_event_generator(review_id: str) -> AsyncGenerator:
         async for message_data in review_service.start_review(
             session_id=review_id,
             topic=topic,
-            num_papers=num_papers,
+            papers_limit=papers_limit,
             model=model
         ):
             # Determine event type

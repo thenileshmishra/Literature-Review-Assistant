@@ -131,8 +131,7 @@ OPENAI_API_KEY=sk-your-openai-api-key-here
 DEFAULT_MODEL=gpt-4o-mini
 LOG_LEVEL=INFO
 DEBUG=false
-MAX_PAPERS=10
-DEFAULT_PAPERS=5
+PAPERS_PER_REVIEW=5
 API_PORT=8000
 CORS_ORIGINS=http://localhost:3000
 ```
@@ -190,7 +189,6 @@ NEXT_PUBLIC_APP_NAME=Literature Review Assistant
 │   ├── agents/                 # SearchAgent, SummarizerAgent
 │   ├── teams/                  # LitRevTeam
 │   ├── tools/                  # ArxivSearchTool
-│   ├── models/                 # Data models
 │   ├── config/                 # Settings
 │   └── core/                   # Utilities
 │

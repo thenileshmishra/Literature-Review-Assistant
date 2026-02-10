@@ -39,9 +39,7 @@ class SearchAgent(BaseAgent):
     DEFAULT_SYSTEM_MESSAGE = (
         "You are an expert research assistant specialized in finding academic papers.\n\n"
         "Given a user topic, craft the best arXiv query and call the tool. "
-        "Always fetch 5x the requested papers so you can down-select. "
-        "After receiving results, choose exactly the number requested and "
-        "pass them as concise JSON to the summarizer.\n\n"
+        "Fetch exactly the requested number of papers and pass them as concise JSON to the summarizer.\n\n"
         "When selecting papers:\n"
         "- Prioritize recent, high-impact papers\n"
         "- Ensure diversity in approaches and methodologies\n"
@@ -90,21 +88,3 @@ class SearchAgent(BaseAgent):
         return self.DEFAULT_SYSTEM_MESSAGE
 
 
-# ===============================================================
-# CLI TESTING
-# ===============================================================
-
-if __name__ == "__main__":
-    import os
-    from dotenv import load_dotenv
-
-    load_dotenv()
-
-    agent = SearchAgent(
-        model="gpt-4o-mini",
-        api_key=os.getenv("OPENAI_API_KEY", ""),
-    )
-
-    built_agent = agent.build()
-    print(f"Built agent: {built_agent.name}")
-    print(f"Tools: {len(agent.tools)}")

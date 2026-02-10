@@ -79,12 +79,13 @@ class ArxivSearchTool(BaseTool):
         Raises:
             ToolError: If the search fails
         """
-        logger.info(f"Searching arXiv: query='{query}', max_results={max_results}")
+        capped_results = min(max_results, self.default_max_results)
+        logger.info(f"Searching arXiv: query='{query}', max_results={capped_results}")
 
         try:
             search = arxiv.Search(
                 query=query,
-                max_results=max_results,
+                max_results=capped_results,
                 sort_by=arxiv.SortCriterion.Relevance,
             )
 
@@ -108,7 +109,7 @@ class ArxivSearchTool(BaseTool):
             raise ToolError(
                 f"Failed to search arXiv: {e}",
                 tool_name=self.name,
-                details={"query": query, "max_results": max_results},
+                details={"query": query, "max_results": capped_results},
             )
 
     # ===============================================================
@@ -125,15 +126,3 @@ class ArxivSearchTool(BaseTool):
         return self.search
 
 
-# ===============================================================
-# CLI TESTING
-# ===============================================================
-
-if __name__ == "__main__":
-    tool = ArxivSearchTool()
-    results = tool.search("graph neural networks", max_results=3)
-
-    for paper in results:
-        print(f"\nTitle: {paper['title']}")
-        print(f"Authors: {', '.join(paper['authors'][:3])}...")
-        print(f"Published: {paper['published']}")
