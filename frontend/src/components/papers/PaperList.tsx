@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, Spin, Empty, Typography } from 'antd'
 import { PaperCard } from './PaperCard'
-import { FileText, Loader2 } from 'lucide-react'
+import { FileText } from 'lucide-react'
 import { getReview } from '@/lib/api/reviews'
 import type { Paper } from '@/lib/types/api'
 
@@ -36,45 +36,47 @@ export function PaperList({ reviewId }: PaperListProps) {
 
   if (isLoading) {
     return (
-      <Card className="border-blue-500/20">
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
-          <span className="ml-2 text-sm text-muted-foreground">Loading papers...</span>
-        </CardContent>
+      <Card className="panel-card">
+        <div className="flex items-center justify-center py-10">
+          <Spin size="large" />
+          <Typography.Text type="secondary" className="ml-3">
+            Loading papers...
+          </Typography.Text>
+        </div>
       </Card>
     )
   }
 
   if (error) {
     return (
-      <Card className="border-destructive/20">
-        <CardContent className="py-8">
-          <p className="text-sm text-destructive text-center">{error}</p>
-        </CardContent>
+      <Card className="panel-card">
+        <Typography.Text type="danger" className="block py-6 text-center">
+          {error}
+        </Typography.Text>
       </Card>
     )
   }
 
   if (papers.length === 0) {
     return (
-      <Card className="border-blue-500/20">
-        <CardContent className="py-8">
-          <p className="text-sm text-muted-foreground text-center">No papers found</p>
-        </CardContent>
+      <Card className="panel-card">
+        <Empty description="No papers found" />
       </Card>
     )
   }
 
   return (
     <div className="space-y-4">
-      <Card className="border-blue-500/20">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-blue-400" />
-            Found Papers ({papers.length})
-          </CardTitle>
-        </CardHeader>
-      </Card>
+      <Card
+        className="panel-card"
+        title={
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            <span>Found papers</span>
+          </div>
+        }
+        extra={<Typography.Text type="secondary">{papers.length}</Typography.Text>}
+      />
 
       <div className="grid gap-4 md:grid-cols-2">
         {papers.map((paper, index) => (

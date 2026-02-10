@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { ConfigProvider, Layout, Alert, Button, Space, Typography, Spin, theme as antdTheme } from 'antd'
 import { Header } from '@/components/layout/Header'
 import { SearchForm } from '@/components/search/SearchForm'
 import { MessageDisplay } from '@/components/chat/MessageDisplay'
@@ -8,14 +9,25 @@ import { PaperList } from '@/components/papers/PaperList'
 import type { CreateReviewRequest } from '@/lib/types/api'
 import { createReview } from '@/lib/api/reviews'
 import { useReviewStream } from '@/lib/hooks/useReviewStream'
-import { Loader2 } from 'lucide-react'
+
+const { Content } = Layout
+const { Text } = Typography
+const { defaultAlgorithm, darkAlgorithm } = antdTheme
 
 export default function Home() {
   const [reviewId, setReviewId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [themeMode, setThemeMode] = useState<'light' | 'dark'>('dark')
+  const [model, setModel] = useState('gpt-4o-mini')
 
   const { messages, status, isStreaming, error: streamError, startStream } = useReviewStream(reviewId)
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.classList.toggle('dark', themeMode === 'dark')
+    root.classList.toggle('light', themeMode === 'light')
+  }, [themeMode])
 
   const handleSubmit = async (request: CreateReviewRequest) => {
     try {
@@ -45,44 +57,62 @@ export default function Home() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <Header />
+    <ConfigProvider
+      theme={{
+        algorithm: themeMode === 'dark' ? darkAlgorithm : defaultAlgorithm,
+        token: {
+          borderRadius: 12,
+          colorPrimary: '#1f6feb',
+          fontFamily: 'inherit',
+        },
+      }}
+    >
+      <Layout className="app-shell">
+        <Header
+          model={model}
+          onModelChange={setModel}
+          themeMode={themeMode}
+          onThemeChange={setThemeMode}
+        />
 
-      <div className="mt-8 space-y-6">
-        {!reviewId ? (
-          <SearchForm onSubmit={handleSubmit} isLoading={isCreating} />
-        ) : (
-          <div className="space-y-6">
-            <button
-              onClick={handleNewSearch}
-              className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-            >
-              ← New Search
-            </button>
+        <Content className="app-content">
+          <div className="content-wrap">
+            {!reviewId ? (
+              <SearchForm onSubmit={handleSubmit} isLoading={isCreating} model={model} />
+            ) : (
+              <div className="space-y-6">
+                <Button type="link" onClick={handleNewSearch} className="px-0">
+                  ← New search
+                </Button>
 
-            {isStreaming && (
-              <div className="flex items-center gap-2 text-blue-400">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Processing review...</span>
+                {isStreaming && (
+                  <Space align="center">
+                    <Spin size="small" />
+                    <Text type="secondary">Processing review...</Text>
+                  </Space>
+                )}
+
+                {messages.length > 0 && (
+                  <MessageDisplay messages={messages} status={status} />
+                )}
+
+                {status === 'completed' && messages.length > 0 && (
+                  <PaperList reviewId={reviewId} />
+                )}
               </div>
             )}
 
-            {messages.length > 0 && (
-              <MessageDisplay messages={messages} status={status} />
-            )}
-
-            {status === 'completed' && messages.length > 0 && (
-              <PaperList reviewId={reviewId} />
+            {(error || streamError) && (
+              <Alert
+                type="error"
+                message={error || streamError}
+                showIcon
+                className="mt-6"
+              />
             )}
           </div>
-        )}
-
-        {(error || streamError) && (
-          <div className="p-4 bg-destructive/10 border border-destructive rounded-lg">
-            <p className="text-sm text-destructive">{error || streamError}</p>
-          </div>
-        )}
-      </div>
-    </div>
+        </Content>
+      </Layout>
+    </ConfigProvider>
   )
 }

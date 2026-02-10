@@ -1,16 +1,24 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Search, Loader2 } from 'lucide-react'
+import {
+  Card,
+  Form,
+  Input,
+  Button,
+  Slider,
+  Alert,
+  Space,
+  Typography,
+} from 'antd'
+import { SearchOutlined, LoadingOutlined } from '@ant-design/icons'
 import type { CreateReviewRequest } from '@/lib/types/api'
 
+const { Title, Text } = Typography
 interface SearchFormProps {
   onSubmit: (request: CreateReviewRequest) => void
   isLoading?: boolean
+  model: string
 }
 
 const EXAMPLE_TOPICS = [
@@ -20,134 +28,117 @@ const EXAMPLE_TOPICS = [
   'neural networks for NLP',
 ]
 
-export function SearchForm({ onSubmit, isLoading = false }: SearchFormProps) {
-  const [topic, setTopic] = useState('')
-  const [numPapers, setNumPapers] = useState(5)
-  const [model, setModel] = useState('gpt-4o-mini')
+export function SearchForm({ onSubmit, isLoading = false, model }: SearchFormProps) {
+  const [form] = Form.useForm()
   const [error, setError] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleFinish = (values: any) => {
     setError('')
 
-    if (topic.trim().length < 3) {
+    if (values.topic.trim().length < 3) {
       setError('Topic must be at least 3 characters long')
       return
     }
 
-    if (numPapers < 1 || numPapers > 10) {
-      setError('Number of papers must be between 1 and 10')
-      return
-    }
-
     onSubmit({
-      topic: topic.trim(),
-      num_papers: numPapers,
+      topic: values.topic.trim(),
+      num_papers: values.numPapers,
       model,
     })
   }
 
-  const handleExampleClick = (exampleTopic: string) => {
-    setTopic(exampleTopic)
-  }
-
   return (
-    <Card className="border-blue-500/20">
-      <CardHeader>
-        <CardTitle>Start Your Literature Review</CardTitle>
-        <CardDescription>
-          Enter a research topic and let our AI agents find and summarize relevant papers
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <Card className="search-card" bordered={false}>
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <div>
+          <Title level={4} style={{ marginBottom: 4 }}>Start your review</Title>
+          <Text type="secondary">
+            Ask a focused research question and receive an agent-produced literature map.
+          </Text>
+        </div>
+
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{
+            numPapers: 5,
+          }}
+          onFinish={handleFinish}
+        >
           {/* Topic Input */}
-          <div className="space-y-2">
-            <Label htmlFor="topic">Research Topic</Label>
+          <Form.Item
+            name="topic"
+            rules={[
+              { required: true, message: 'Please enter a topic' },
+              { min: 3, message: 'Topic must be at least 3 characters' },
+            ]}
+          >
             <Input
-              id="topic"
-              placeholder="e.g., machine learning in healthcare"
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
+              placeholder="e.g., graph neural networks for drug discovery"
               disabled={isLoading}
-              className="text-base"
+              size="large"
+              prefix={<SearchOutlined />}
             />
-            <div className="flex flex-wrap gap-2 mt-2">
+          </Form.Item>
+
+          <div className="hint-row">
+            <Text type="secondary">Try:</Text>
+            <Space wrap>
               {EXAMPLE_TOPICS.map((example) => (
-                <button
+                <Button
                   key={example}
-                  type="button"
-                  onClick={() => handleExampleClick(example)}
+                  type="text"
+                  size="small"
                   disabled={isLoading}
-                  className="text-xs px-2 py-1 rounded-full bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors disabled:opacity-50"
+                  className="hint-chip"
+                  onClick={() => form.setFieldsValue({ topic: example })}
                 >
                   {example}
-                </button>
+                </Button>
               ))}
-            </div>
+            </Space>
           </div>
 
           {/* Number of Papers */}
-          <div className="space-y-2">
-            <Label htmlFor="numPapers">Number of Papers: {numPapers}</Label>
-            <input
-              id="numPapers"
-              type="range"
-              min="1"
-              max="10"
-              value={numPapers}
-              onChange={(e) => setNumPapers(parseInt(e.target.value))}
-              disabled={isLoading}
-              className="w-full h-2 bg-blue-500/20 rounded-lg appearance-none cursor-pointer"
-            />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>1</span>
-              <span>10</span>
-            </div>
-          </div>
-
-          {/* Model Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="model">LLM Model</Label>
-            <select
-              id="model"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              disabled={isLoading}
-              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option value="gpt-4o-mini">GPT-4o Mini (Fast & Efficient)</option>
-              <option value="gpt-4o">GPT-4o (Balanced)</option>
-              <option value="gpt-4-turbo">GPT-4 Turbo (Most Capable)</option>
-            </select>
-          </div>
+          <Form.Item
+            label="Number of papers"
+            name="numPapers"
+            rules={[
+              { required: true },
+              {
+                type: 'number',
+                min: 1,
+                max: 10,
+                message: 'Must be between 1 and 10',
+              },
+            ]}
+          >
+            <Slider min={1} max={10} disabled={isLoading} />
+          </Form.Item>
 
           {/* Error Message */}
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
+          {error && <Alert type="error" message={error} showIcon />}
 
           {/* Submit Button */}
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="w-full"
-            size="lg"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Starting Review...
-              </>
-            ) : (
-              <>
-                <Search className="mr-2 h-4 w-4" />
-                Start Literature Review
-              </>
-            )}
-          </Button>
-        </form>
-      </CardContent>
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              block
+              disabled={isLoading}
+              icon={
+                isLoading ? <LoadingOutlined /> : <SearchOutlined />
+              }
+              loading={isLoading}
+            >
+              {isLoading
+                ? 'Starting Review...'
+                : 'Start Literature Review'}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Space>
     </Card>
   )
 }
