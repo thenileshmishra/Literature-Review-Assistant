@@ -12,7 +12,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import AsyncGenerator, List, TYPE_CHECKING
 
-from src.core.logging_config import get_logger
+from app.core.logging_config import get_logger
 
 if TYPE_CHECKING:
     from autogen_agentchat.agents import AssistantAgent

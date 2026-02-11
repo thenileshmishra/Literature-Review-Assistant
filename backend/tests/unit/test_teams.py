@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
 
-from src.teams.litrev_team import LitRevTeam
+from app.teams.litrev_team import LitRevTeam
 
 
 class TestLitRevTeam:
@@ -27,7 +27,7 @@ class TestLitRevTeam:
         assert team.model == "gpt-4o-mini"
         assert team.max_turns == 3
 
-    @patch("src.agents.base.OpenAIChatCompletionClient")
+    @patch("app.agents.base.OpenAIChatCompletionClient")
     def test_get_participants(self, mock_client):
         """Test participants are created correctly."""
         team = LitRevTeam(
@@ -42,7 +42,7 @@ class TestLitRevTeam:
         assert "search_agent" in names
         assert "summarizer" in names
 
-    @patch("src.agents.base.OpenAIChatCompletionClient")
+    @patch("app.agents.base.OpenAIChatCompletionClient")
     def test_build_creates_team(self, mock_client):
         """Test build creates RoundRobinGroupChat."""
         team = LitRevTeam(

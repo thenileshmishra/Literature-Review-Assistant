@@ -9,8 +9,8 @@ from __future__ import annotations
 import pytest
 from unittest.mock import MagicMock, patch
 
-from src.agents.search_agent import SearchAgent
-from src.agents.summarizer_agent import SummarizerAgent
+from app.agents.search_agent import SearchAgent
+from app.agents.summarizer_agent import SummarizerAgent
 
 
 class TestSearchAgent:
@@ -40,7 +40,7 @@ class TestSearchAgent:
         assert "arXiv" in system_msg
         assert "query" in system_msg.lower()
 
-    @patch("src.agents.base.OpenAIChatCompletionClient")
+    @patch("app.agents.base.OpenAIChatCompletionClient")
     def test_build_creates_assistant(self, mock_client):
         """Test build creates AssistantAgent."""
         agent = SearchAgent(
@@ -81,7 +81,7 @@ class TestSummarizerAgent:
         assert "literature" in system_msg.lower()
         assert "Markdown" in system_msg
 
-    @patch("src.agents.base.OpenAIChatCompletionClient")
+    @patch("app.agents.base.OpenAIChatCompletionClient")
     def test_build_creates_assistant(self, mock_client):
         """Test build creates AssistantAgent."""
         agent = SummarizerAgent(

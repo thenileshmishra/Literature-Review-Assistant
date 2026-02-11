@@ -50,7 +50,7 @@ install: install-backend install-frontend
 install-backend:
 	@echo "Installing backend dependencies..."
 	pip install -r backend/requirements.txt
-	pip install -r requirements-dev.txt
+	pip install -r backend/requirements-dev.txt
 
 install-frontend:
 	@echo "Installing frontend dependencies..."
@@ -66,7 +66,7 @@ dev:
 
 dev-backend:
 	@echo "Starting backend development server..."
-	PYTHONPATH=. uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
+	cd backend && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 dev-frontend:
 	@echo "Starting frontend development server..."
@@ -80,7 +80,7 @@ test: test-backend
 
 test-backend:
 	@echo "Running backend tests..."
-	PYTHONPATH=. pytest tests/backend -v --tb=short
+	cd backend && pytest tests -v --tb=short
 
 test-frontend:
 	@echo "Running frontend tests..."
@@ -88,7 +88,7 @@ test-frontend:
 
 test-cov:
 	@echo "Running backend tests with coverage..."
-	PYTHONPATH=. pytest tests/backend -v --cov=backend --cov=src --cov-report=html
+	cd backend && pytest tests -v --cov=app --cov-report=html
 
 # =============================================================================
 # Code Quality
@@ -96,13 +96,13 @@ test-cov:
 
 lint:
 	@echo "Running linters..."
-	ruff check backend/ src/ tests/
-	mypy backend/ src/ --ignore-missing-imports
+	ruff check backend/app backend/tests
+	mypy backend/app --ignore-missing-imports
 
 format:
 	@echo "Formatting code..."
-	ruff format backend/ src/ tests/
-	ruff check --fix backend/ src/ tests/
+	ruff format backend/app backend/tests
+	ruff check --fix backend/app backend/tests
 
 # =============================================================================
 # Docker

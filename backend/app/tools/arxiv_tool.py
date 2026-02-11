@@ -13,9 +13,9 @@ from typing import Callable, Dict, List
 
 import arxiv
 
-from src.tools.base import BaseTool
-from src.core.logging_config import get_logger
-from src.core.exceptions import ToolError
+from app.tools.base import BaseTool
+from app.core.logging_config import get_logger
+from app.core.exceptions import ToolError
 
 logger = get_logger(__name__)
 

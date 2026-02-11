@@ -11,10 +11,10 @@ from __future__ import annotations
 
 from typing import AsyncGenerator
 
-from src.teams.litrev_team import LitRevTeam
-from src.config.settings import Settings, get_settings
-from src.core.logging_config import get_logger, setup_logging
-from src.core.exceptions import ConfigurationError
+from app.teams.litrev_team import LitRevTeam
+from app.config.settings import Settings, get_settings
+from app.core.logging_config import get_logger, setup_logging
+from app.core.exceptions import ConfigurationError
 
 logger = get_logger(__name__)
 

@@ -94,7 +94,8 @@ AI-powered literature review assistant that helps researchers discover and synth
 
 3. **Run the backend**
    ```bash
-   uvicorn backend.app.main:app --reload --port 8000
+   cd backend
+   uvicorn app.main:app --reload --port 8000
    ```
 
 #### Frontend Setup
@@ -149,19 +150,24 @@ NEXT_PUBLIC_APP_NAME=Literature Review Assistant
 ├── backend/                    # FastAPI Backend Service
 │   ├── app/
 │   │   ├── main.py            # FastAPI entry point
-│   │   ├── config.py          # Backend configuration
 │   │   ├── api/               # API routes
 │   │   │   └── routes/
 │   │   │       ├── health.py  # Health checks
 │   │   │       ├── reviews.py # Review CRUD
 │   │   │       └── stream.py  # SSE streaming
+│   │   ├── agents/            # SearchAgent, SummarizerAgent
+│   │   ├── orchestrator/      # LitRevOrchestrator
+│   │   ├── teams/             # LitRevTeam
+│   │   ├── tools/             # ArxivSearchTool
+│   │   ├── core/              # Utilities
+│   │   ├── config/            # Settings
 │   │   ├── models/            # Request/Response models
-│   │   ├── services/          # Business logic
-│   │   │   ├── review_service.py
-│   │   │   └── session_manager.py
-│   │   └── utils/
+│   │   ├── schemas/           # Domain models
+│   │   └── services/          # Business logic
+│   ├── tests/
 │   ├── Dockerfile
-│   └── requirements.txt
+│   ├── requirements.txt
+│   └── requirements-dev.txt
 │
 ├── frontend/                   # Next.js Frontend Service
 │   ├── src/
@@ -183,14 +189,6 @@ NEXT_PUBLIC_APP_NAME=Literature Review Assistant
 │   ├── Dockerfile
 │   ├── package.json
 │   └── next.config.js
-│
-├── src/                        # AutoGen Multi-Agent System
-│   ├── orchestrator/           # (Unchanged)
-│   ├── agents/                 # SearchAgent, SummarizerAgent
-│   ├── teams/                  # LitRevTeam
-│   ├── tools/                  # ArxivSearchTool
-│   ├── config/                 # Settings
-│   └── core/                   # Utilities
 │
 ├── docker-compose.yml          # Multi-service orchestration
 ├── docker-compose.dev.yml      # Development overrides
@@ -241,7 +239,8 @@ make test-frontend       # Frontend tests
 
 **Backend Development:**
 ```bash
-uvicorn backend.app.main:app --reload --port 8000
+cd backend
+uvicorn app.main:app --reload --port 8000
 ```
 
 **Frontend Development:**
@@ -252,7 +251,7 @@ cd frontend && npm run dev
 **Run Tests:**
 ```bash
 # Backend
-PYTHONPATH=. pytest tests/backend -v
+cd backend && pytest tests -v
 
 # Frontend
 cd frontend && npm test

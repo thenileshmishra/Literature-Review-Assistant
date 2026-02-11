@@ -1,7 +1,7 @@
 """API models"""
 
-from backend.app.models.requests import CreateReviewRequest
-from backend.app.models.responses import (
+from app.models.requests import CreateReviewRequest
+from app.models.responses import (
     ReviewResponse,
     ReviewStatus,
     MessageResponse,

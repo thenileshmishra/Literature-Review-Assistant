@@ -4,7 +4,7 @@ from typing import Dict, Optional
 from datetime import datetime
 import uuid
 import logging
-from backend.app.models.responses import ReviewResponse, ReviewStatus, MessageResponse, PaperResponse
+from app.models.responses import ReviewResponse, ReviewStatus, MessageResponse, PaperResponse
 
 logger = logging.getLogger(__name__)
 

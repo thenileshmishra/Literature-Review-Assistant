@@ -28,13 +28,13 @@ jobs:
       - name: Build & Push Backend
         run: |
           BACKEND_URI=143873723946.dkr.ecr.us-east-1.amazonaws.com/agent_autogen_backend
-          docker build -f backend/Dockerfile -t $BACKEND_URI:latest .
+          docker build -t $BACKEND_URI:latest ./backend
           docker push $BACKEND_URI:latest
 
       - name: Build & Push Frontend
         run: |
           FRONTEND_URI=143873723946.dkr.ecr.us-east-1.amazonaws.com/agent_autogen_frontend
-          docker build --build-arg NEXT_PUBLIC_API_URL=/api -t $FRONTEND_URI:latest ./frontend
+          docker build --build-arg NEXT_PUBLIC_API_URL= -t $FRONTEND_URI:latest ./frontend
           docker push $FRONTEND_URI:latest
 
       - name: Copy Nginx Config to EC2
@@ -78,7 +78,7 @@ jobs:
               --network app-network \
               --restart unless-stopped \
               -e OPENAI_API_KEY="$OPENAI_API_KEY" \
-              -e CORS_ORIGINS="http://agent.nileshmishra.info" \
+              -e CORS_ORIGINS='["http://agent.nileshmishra.info","https://agent.nileshmishra.info"]' \
               $BACKEND_URI:latest
 
             docker run -d --name frontend \

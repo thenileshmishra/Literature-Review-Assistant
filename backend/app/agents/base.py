@@ -15,7 +15,7 @@ from typing import List, Optional, TYPE_CHECKING
 from autogen_agentchat.agents import AssistantAgent
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
-from src.core.logging_config import get_logger
+from app.core.logging_config import get_logger
 
 if TYPE_CHECKING:
     from autogen_core.tools import FunctionTool

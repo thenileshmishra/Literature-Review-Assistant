@@ -12,8 +12,11 @@ python-dotenv>=1.0.0
 pydantic>=2.0.0
 pydantic-settings>=2.0.0
 
-# AutoGen dependencies (from root requirements.txt)
+# AutoGen dependencies
 pyautogen>=0.2.0
+autogen-agentchat
+autogen-ext[openai]
+autogen-core
 
 # LLM
 openai>=1.0.0
