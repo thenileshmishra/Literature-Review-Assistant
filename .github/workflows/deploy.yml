@@ -65,11 +65,13 @@ jobs:
 
             docker run -d --name backend \
               --network app-network \
-              -p 8000:8000 \
+              --restart unless-stopped \
               -e OPENAI_API_KEY="$OPENAI_API_KEY" \
               $BACKEND_URI:latest
 
             docker run -d --name frontend \
               --network app-network \
+              --restart unless-stopped \
               -p 80:3000 \
+              -e NEXT_PUBLIC_API_URL="http://backend:8000" \
               $FRONTEND_URI:latest
