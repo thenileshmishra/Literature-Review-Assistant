@@ -34,7 +34,7 @@ jobs:
       - name: Build & Push Frontend
         run: |
           FRONTEND_URI=143873723946.dkr.ecr.us-east-1.amazonaws.com/agent_autogen_frontend
-          docker build -t $FRONTEND_URI:latest ./frontend
+          docker build --build-arg NEXT_PUBLIC_API_URL=/api -t $FRONTEND_URI:latest ./frontend
           docker push $FRONTEND_URI:latest
 
       - name: Copy Nginx Config to EC2
