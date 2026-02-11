@@ -17,8 +17,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Set environment variables for build
+ARG NEXT_PUBLIC_API_URL
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NODE_ENV production
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 # Build Next.js app
 RUN npm run build
@@ -28,8 +30,10 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
+ARG NEXT_PUBLIC_API_URL
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
