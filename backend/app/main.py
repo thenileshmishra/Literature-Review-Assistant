@@ -8,8 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import logging
 
-from backend.app.config import get_backend_settings
-from backend.app.api.routes import health, reviews, stream
+from app.config.settings import get_backend_settings
+from app.api.routes import health, reviews, stream
 
 # Configure logging
 logging.basicConfig(
@@ -72,7 +72,7 @@ async def global_exception_handler(request, exc):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
-        "backend.app.main:app",
+        "app.main:app",
         host=settings.api_host,
         port=settings.api_port,
         reload=settings.debug

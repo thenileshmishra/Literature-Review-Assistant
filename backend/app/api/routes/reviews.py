@@ -3,10 +3,10 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from typing import List
 import logging
-from backend.app.models.requests import CreateReviewRequest
-from backend.app.models.responses import ReviewResponse
-from backend.app.services import get_session_manager, ReviewService
-from src.config.settings import get_settings
+from app.models.requests import CreateReviewRequest
+from app.models.responses import ReviewResponse
+from app.services import get_session_manager, ReviewService
+from app.config.settings import get_settings
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

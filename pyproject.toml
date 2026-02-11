@@ -73,7 +73,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["src*", "frontend*"]
+include = ["backend*", "frontend*"]
 
 # =============================================================================
 # Ruff Configuration
@@ -101,7 +101,7 @@ quote-style = "double"
 indent-style = "space"
 
 [tool.ruff.isort]
-known-first-party = ["src", "frontend"]
+known-first-party = ["app", "backend", "frontend"]
 
 # =============================================================================
 # Mypy Configuration
@@ -118,7 +118,7 @@ ignore_missing_imports = true
 # =============================================================================
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["backend/tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 asyncio_mode = "auto"
@@ -129,7 +129,7 @@ addopts = "-v --tb=short"
 # =============================================================================
 
 [tool.coverage.run]
-source = ["src"]
+source = ["backend/app"]
 branch = true
 
 [tool.coverage.report]

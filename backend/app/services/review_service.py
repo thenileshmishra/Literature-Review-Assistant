@@ -6,10 +6,10 @@ import json
 from typing import AsyncGenerator, Dict, Any
 from datetime import datetime
 
-from src.orchestrator.litrev_orchestrator import run_litrev
-from src.core.exceptions import LitRevError
-from backend.app.models.responses import ReviewStatus
-from backend.app.services.session_manager import SessionManager
+from app.orchestrator.litrev_orchestrator import run_litrev
+from app.core.exceptions import LitRevError
+from app.models.responses import ReviewStatus
+from app.services.session_manager import SessionManager
 
 logger = logging.getLogger(__name__)
 

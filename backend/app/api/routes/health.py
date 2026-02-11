@@ -1,8 +1,8 @@
 """Health check endpoints"""
 
 from fastapi import APIRouter
-from backend.app.models.responses import HealthResponse
-from backend.app.config import get_backend_settings
+from app.models.responses import HealthResponse
+from app.config.settings import get_backend_settings
 
 router = APIRouter()
 settings = get_backend_settings()

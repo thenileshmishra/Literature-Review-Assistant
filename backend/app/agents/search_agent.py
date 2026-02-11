@@ -11,9 +11,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from src.agents.base import BaseAgent
-from src.tools.arxiv_tool import ArxivSearchTool
-from src.core.logging_config import get_logger
+from app.agents.base import BaseAgent
+from app.tools.arxiv_tool import ArxivSearchTool
+from app.core.logging_config import get_logger
 
 if TYPE_CHECKING:
     from autogen_core.tools import FunctionTool

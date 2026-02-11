@@ -10,7 +10,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from datetime import datetime
 
-from src.tools.arxiv_tool import ArxivSearchTool
+from app.tools.arxiv_tool import ArxivSearchTool
 
 
 class TestArxivSearchTool:

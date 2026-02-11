@@ -6,8 +6,8 @@ import logging
 import json
 from typing import AsyncGenerator
 
-from backend.app.services import get_session_manager, ReviewService
-from src.config.settings import get_settings
+from app.services import get_session_manager, ReviewService
+from app.config.settings import get_settings
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

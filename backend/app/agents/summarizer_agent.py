@@ -9,8 +9,8 @@ well-structured markdown literature reviews.
 
 from __future__ import annotations
 
-from src.agents.base import BaseAgent
-from src.core.logging_config import get_logger
+from app.agents.base import BaseAgent
+from app.core.logging_config import get_logger
 
 logger = get_logger(__name__)
 

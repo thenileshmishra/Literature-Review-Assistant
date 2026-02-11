@@ -15,11 +15,11 @@ from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.messages import TextMessage
 from autogen_agentchat.teams import RoundRobinGroupChat
 
-from src.teams.base import BaseTeam
-from src.agents.search_agent import SearchAgent
-from src.agents.summarizer_agent import SummarizerAgent
-from src.core.logging_config import get_logger
-from src.core.exceptions import TeamError
+from app.teams.base import BaseTeam
+from app.agents.search_agent import SearchAgent
+from app.agents.summarizer_agent import SummarizerAgent
+from app.core.logging_config import get_logger
+from app.core.exceptions import TeamError
 
 logger = get_logger(__name__)
 
