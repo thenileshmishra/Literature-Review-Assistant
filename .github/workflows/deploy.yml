@@ -2,29 +2,44 @@ name: Deploy
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
+    branches: [main]
 
-concurrency:
-  group: deploy-main
-  cancel-in-progress: true
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Deploy over SSH
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::143873723946:role/github-actions-ecr-ecs-role
+          aws-region: ap-south-1
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push Image
+        run: |
+          IMAGE_URI=143873723946.dkr.ecr.ap-south-1.amazonaws.com/literature-review-assistant
+          docker build -t $IMAGE_URI:latest .
+          docker push $IMAGE_URI:latest
+
+      - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
+          username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          port: ${{ secrets.EC2_PORT || 22 }}
           script: |
-            set -e
-            cd ${{ secrets.EC2_APP_PATH }}
-            git pull origin main
-            docker compose pull
-            docker compose up -d --build
-            docker image prune -f
+            IMAGE_URI=143873723946.dkr.ecr.ap-south-1.amazonaws.com/literature-review-assistant
+            docker pull $IMAGE_URI:latest
+            docker stop app || true
+            docker rm app || true
+            docker run -d --name app -p 80:8000 $IMAGE_URI:latest
