@@ -38,6 +38,8 @@ export default function Home() {
     setThemeInitialized(true)
   }, [])
 
+  
+
   useEffect(() => {
     if (!themeInitialized) return
     const root = document.documentElement
