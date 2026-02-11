@@ -6,6 +6,9 @@
 
 # AutoGen Agent Framework
 pyautogen>=0.2.0
+autogen-agentchat
+autogen-ext[openai]
+autogen-core
 
 # LLM & AI
 openai>=1.0.0
