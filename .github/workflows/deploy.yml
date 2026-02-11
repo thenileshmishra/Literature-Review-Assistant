@@ -78,12 +78,13 @@ jobs:
               --network app-network \
               --restart unless-stopped \
               -e OPENAI_API_KEY="$OPENAI_API_KEY" \
+              -e CORS_ORIGINS="http://agent.nileshmishra.info" \
               $BACKEND_URI:latest
 
             docker run -d --name frontend \
               --network app-network \
               --restart unless-stopped \
-              -e NEXT_PUBLIC_API_URL="http://backend:8000" \
+              -e NEXT_PUBLIC_API_URL="http://agent.nileshmishra.info" \
               $FRONTEND_URI:latest
 
             docker run -d --name nginx \
