@@ -20,26 +20,52 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::143873723946:role/github-actions-ecr-ecs-role
-          aws-region: ap-south-1
+          aws-region: us-east-1
 
       - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and Push Image
+      - name: Build & Push Backend
         run: |
-          IMAGE_URI=143873723946.dkr.ecr.ap-south-1.amazonaws.com/literature-review-assistant
-          docker build -t $IMAGE_URI:latest .
-          docker push $IMAGE_URI:latest
+          BACKEND_URI=143873723946.dkr.ecr.us-east-1.amazonaws.com/agent_autogen_backend
+          docker build -t $BACKEND_URI:latest ./backend
+          docker push $BACKEND_URI:latest
 
-      - name: Deploy on EC2
+      - name: Build & Push Frontend
+        run: |
+          FRONTEND_URI=143873723946.dkr.ecr.us-east-1.amazonaws.com/agent_autogen_frontend
+          docker build -t $FRONTEND_URI:latest ./frontend
+          docker push $FRONTEND_URI:latest
+
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            IMAGE_URI=143873723946.dkr.ecr.ap-south-1.amazonaws.com/literature-review-assistant
-            docker pull $IMAGE_URI:latest
-            docker stop app || true
-            docker rm app || true
-            docker run -d --name app -p 80:8000 $IMAGE_URI:latest
+            BACKEND_URI=143873723946.dkr.ecr.us-east-1.amazonaws.com/agent_autogen_backend
+            FRONTEND_URI=143873723946.dkr.ecr.us-east-1.amazonaws.com/agent_autogen_frontend
+
+            aws ecr get-login-password --region us-east-1 | \
+            docker login --username AWS --password-stdin 143873723946.dkr.ecr.us-east-1.amazonaws.com
+
+            docker pull $BACKEND_URI:latest
+            docker pull $FRONTEND_URI:latest
+
+            docker stop backend || true
+            docker rm backend || true
+            docker stop frontend || true
+            docker rm frontend || true
+
+            docker network create app-network || true
+
+            docker run -d --name backend \
+              --network app-network \
+              -p 8000:8000 \
+              $BACKEND_URI:latest
+
+            docker run -d --name frontend \
+              --network app-network \
+              -p 80:3000 \
+              $FRONTEND_URI:latest
