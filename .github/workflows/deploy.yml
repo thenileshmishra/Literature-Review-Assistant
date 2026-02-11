@@ -37,6 +37,15 @@ jobs:
           docker build -t $FRONTEND_URI:latest ./frontend
           docker push $FRONTEND_URI:latest
 
+      - name: Copy Nginx Config to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: nginx.conf
+          target: ~/
+
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         env:
@@ -60,6 +69,8 @@ jobs:
             docker rm backend || true
             docker stop frontend || true
             docker rm frontend || true
+            docker stop nginx || true
+            docker rm nginx || true
 
             docker network create app-network || true
 
@@ -72,6 +83,15 @@ jobs:
             docker run -d --name frontend \
               --network app-network \
               --restart unless-stopped \
-              -p 80:3000 \
               -e NEXT_PUBLIC_API_URL="http://backend:8000" \
               $FRONTEND_URI:latest
+
+            docker run -d --name nginx \
+              --network app-network \
+              --restart unless-stopped \
+              -p 80:80 \
+              -p 443:443 \
+              -v /etc/letsencrypt:/etc/letsencrypt:ro \
+              -v /var/www/certbot:/var/www/certbot:ro \
+              -v ~/nginx.conf:/etc/nginx/conf.d/default.conf:ro \
+              nginx:alpine
