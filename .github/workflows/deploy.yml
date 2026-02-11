@@ -28,7 +28,7 @@ jobs:
       - name: Build & Push Backend
         run: |
           BACKEND_URI=143873723946.dkr.ecr.us-east-1.amazonaws.com/agent_autogen_backend
-          docker build -t $BACKEND_URI:latest ./backend
+          docker build -f backend/Dockerfile -t $BACKEND_URI:latest .
           docker push $BACKEND_URI:latest
 
       - name: Build & Push Frontend
