@@ -9,12 +9,13 @@ for different failure modes across the application.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 
 # ===============================================================
 # BASE EXCEPTION
 # ===============================================================
+
 
 class LitRevError(Exception):
     """
@@ -28,7 +29,7 @@ class LitRevError(Exception):
     def __init__(
         self,
         message: str,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         self.message = message
         self.details = details or {}
@@ -44,6 +45,7 @@ class LitRevError(Exception):
 # SPECIFIC EXCEPTIONS
 # ===============================================================
 
+
 class ConfigurationError(LitRevError):
     """
     Raised when application configuration is invalid or missing.
@@ -58,7 +60,7 @@ class ConfigurationError(LitRevError):
         self,
         message: str,
         config_key: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         details = details or {}
         if config_key:
@@ -80,7 +82,7 @@ class AgentError(LitRevError):
         self,
         message: str,
         agent_name: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         details = details or {}
         if agent_name:
@@ -102,7 +104,7 @@ class ToolError(LitRevError):
         self,
         message: str,
         tool_name: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         details = details or {}
         if tool_name:
@@ -124,7 +126,7 @@ class TeamError(LitRevError):
         self,
         message: str,
         team_name: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         details = details or {}
         if team_name:

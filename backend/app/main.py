@@ -3,18 +3,18 @@ FastAPI main application
 Wraps AutoGen multi-agent system with REST API and SSE streaming
 """
 
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import logging
 
-from app.config.settings import get_backend_settings
 from app.api.routes import health, reviews, stream
+from app.config.settings import get_backend_settings
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ app = FastAPI(
     title=settings.api_title,
     version=settings.api_version,
     description=settings.api_description,
-    debug=settings.debug
+    debug=settings.debug,
 )
 
 # Configure CORS
@@ -64,16 +64,16 @@ async def global_exception_handler(request, exc):
     """Global exception handler"""
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
     return JSONResponse(
-        status_code=500,
-        content={"error": "Internal server error", "details": str(exc)}
+        status_code=500, content={"error": "Internal server error", "details": str(exc)}
     )
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "app.main:app",
         host=settings.api_host,
         port=settings.api_port,
-        reload=settings.debug
+        reload=settings.debug,
     )

@@ -1,13 +1,14 @@
 """SSE streaming endpoints"""
 
+import json
+import logging
+from collections.abc import AsyncGenerator
+
 from fastapi import APIRouter
 from sse_starlette.sse import EventSourceResponse
-import logging
-import json
-from typing import AsyncGenerator
 
-from app.services import get_session_manager, ReviewService
 from app.config.settings import get_settings
+from app.services import ReviewService, get_session_manager
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -27,7 +28,7 @@ async def review_event_generator(review_id: str) -> AsyncGenerator:
     if not session:
         yield {
             "event": "error",
-            "data": json.dumps({"error": "Review not found", "review_id": review_id})
+            "data": json.dumps({"error": "Review not found", "review_id": review_id}),
         }
         return
 
@@ -45,30 +46,18 @@ async def review_event_generator(review_id: str) -> AsyncGenerator:
     try:
         # Stream messages from review service
         async for message_data in review_service.start_review(
-            session_id=review_id,
-            topic=topic,
-            papers_limit=papers_limit,
-            model=model
+            session_id=review_id, topic=topic, papers_limit=papers_limit, model=model
         ):
             # Determine event type
             if message_data.get("type") == "complete":
-                yield {
-                    "event": "complete",
-                    "data": json.dumps(message_data)
-                }
+                yield {"event": "complete", "data": json.dumps(message_data)}
                 break
             elif message_data.get("type") == "error":
-                yield {
-                    "event": "error",
-                    "data": json.dumps(message_data)
-                }
+                yield {"event": "error", "data": json.dumps(message_data)}
                 break
             else:
                 # Regular message event
-                yield {
-                    "event": "message",
-                    "data": json.dumps(message_data)
-                }
+                yield {"event": "message", "data": json.dumps(message_data)}
 
         logger.info(f"Completed SSE stream for review {review_id}")
 
@@ -76,10 +65,7 @@ async def review_event_generator(review_id: str) -> AsyncGenerator:
         logger.error(f"Error in SSE stream for review {review_id}: {e}", exc_info=True)
         yield {
             "event": "error",
-            "data": json.dumps({
-                "error": str(e),
-                "review_id": review_id
-            })
+            "data": json.dumps({"error": str(e), "review_id": review_id}),
         }
 
 

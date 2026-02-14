@@ -25,6 +25,7 @@ logger = get_logger(__name__)
 # SEARCH AGENT
 # ===============================================================
 
+
 class SearchAgent(BaseAgent):
     """
     Agent specialized in searching arXiv for relevant papers.
@@ -86,5 +87,3 @@ class SearchAgent(BaseAgent):
             str: System prompt for paper searching
         """
         return self.DEFAULT_SYSTEM_MESSAGE
-
-

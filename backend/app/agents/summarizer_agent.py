@@ -19,6 +19,7 @@ logger = get_logger(__name__)
 # SUMMARIZER AGENT
 # ===============================================================
 
+
 class SummarizerAgent(BaseAgent):
     """
     Agent specialized in producing literature reviews.
@@ -82,5 +83,3 @@ class SummarizerAgent(BaseAgent):
             str: System prompt for literature review generation
         """
         return self.DEFAULT_SYSTEM_MESSAGE
-
-

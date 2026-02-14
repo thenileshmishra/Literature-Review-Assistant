@@ -28,6 +28,7 @@ logger = get_logger(__name__)
 # LITERATURE REVIEW TEAM
 # ===============================================================
 
+
 class LitRevTeam(BaseTeam):
     """
     Two-agent team for literature review generation.
@@ -139,5 +140,3 @@ class LitRevTeam(BaseTeam):
                 team_name=self.name,
                 details={"task": task},
             )
-
-

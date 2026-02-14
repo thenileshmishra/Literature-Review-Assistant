@@ -23,6 +23,7 @@ logger = get_logger(__name__)
 # LITERATURE REVIEW ORCHESTRATOR
 # ===============================================================
 
+
 class LitRevOrchestrator:
     """
     Main orchestrator for literature review generation.
@@ -113,6 +114,7 @@ class LitRevOrchestrator:
 # CONVENIENCE FUNCTION
 # ===============================================================
 
+
 async def run_litrev(
     topic: str,
     num_papers: int = 5,
@@ -140,5 +142,3 @@ async def run_litrev(
 
     async for msg in orchestrator.run_review(topic, num_papers):
         yield msg
-
-

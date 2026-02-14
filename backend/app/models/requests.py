@@ -11,7 +11,7 @@ class CreateReviewRequest(BaseModel):
         min_length=3,
         max_length=500,
         description="Research topic to review",
-        examples=["graph neural networks", "renewable energy storage"]
+        examples=["graph neural networks", "renewable energy storage"],
     )
 
     @field_validator("topic")
@@ -24,8 +24,4 @@ class CreateReviewRequest(BaseModel):
         return v
 
     class Config:
-        json_schema_extra = {
-            "example": {
-                "topic": "graph neural networks"
-            }
-        }
+        json_schema_extra = {"example": {"topic": "graph neural networks"}}

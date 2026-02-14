@@ -24,6 +24,7 @@ logger = get_logger(__name__)
 # ARXIV SEARCH TOOL
 # ===============================================================
 
+
 class ArxivSearchTool(BaseTool):
     """
     Tool for searching arXiv papers.
@@ -55,7 +56,9 @@ class ArxivSearchTool(BaseTool):
         self.default_max_results = default_max_results
         self._client = arxiv.Client()
 
-        logger.debug(f"ArxivSearchTool initialized with default_max={default_max_results}")
+        logger.debug(
+            f"ArxivSearchTool initialized with default_max={default_max_results}"
+        )
 
     # ===============================================================
     # SEARCH IMPLEMENTATION
@@ -124,5 +127,3 @@ class ArxivSearchTool(BaseTool):
             Callable: The search method
         """
         return self.search
-
-

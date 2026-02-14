@@ -1,12 +1,13 @@
 """Review management endpoints"""
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
-from typing import List
 import logging
+
+from fastapi import APIRouter, BackgroundTasks, HTTPException
+
+from app.config.settings import get_settings
 from app.models.requests import CreateReviewRequest
 from app.models.responses import ReviewResponse
-from app.services import get_session_manager, ReviewService
-from app.config.settings import get_settings
+from app.services import ReviewService, get_session_manager
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -15,8 +16,7 @@ settings = get_settings()
 
 @router.post("/reviews", response_model=ReviewResponse, status_code=201)
 async def create_review(
-    request: CreateReviewRequest,
-    background_tasks: BackgroundTasks
+    request: CreateReviewRequest, background_tasks: BackgroundTasks
 ):
     """
     Create a new literature review
@@ -83,7 +83,7 @@ async def delete_review(review_id: str):
     return None
 
 
-@router.get("/reviews", response_model=List[ReviewResponse])
+@router.get("/reviews", response_model=list[ReviewResponse])
 async def list_reviews(limit: int = 20, offset: int = 0):
     """List recent reviews"""
     session_manager = get_session_manager()

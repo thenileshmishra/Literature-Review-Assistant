@@ -24,6 +24,7 @@ logger = get_logger(__name__)
 # BASE TEAM CLASS
 # ===============================================================
 
+
 class BaseTeam(ABC):
     """
     Abstract base class for agent teams.

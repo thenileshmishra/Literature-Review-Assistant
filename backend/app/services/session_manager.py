@@ -4,7 +4,12 @@ from typing import Dict, Optional
 from datetime import datetime
 import uuid
 import logging
-from app.models.responses import ReviewResponse, ReviewStatus, MessageResponse, PaperResponse
+from app.models.responses import (
+    ReviewResponse,
+    ReviewStatus,
+    MessageResponse,
+    PaperResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -31,15 +36,11 @@ class SessionManager:
         review = ReviewResponse(
             id=session_id,
             status=ReviewStatus.PENDING,
-            request={
-                "topic": topic,
-                "papers_limit": papers_limit,
-                "model": model
-            },
+            request={"topic": topic, "papers_limit": papers_limit, "model": model},
             messages=[],
             papers=[],
             created_at=datetime.utcnow(),
-            completed_at=None
+            completed_at=None,
         )
 
         # Store session
@@ -65,11 +66,7 @@ class SessionManager:
             logger.debug(f"Updated session {session_id} status to {status}")
 
     def add_message(
-        self,
-        session_id: str,
-        source: str,
-        content: str,
-        message_type: str = "system"
+        self, session_id: str, source: str, content: str, message_type: str = "system"
     ) -> None:
         """Add a message to a session"""
         if session_id in self._sessions:
@@ -77,7 +74,7 @@ class SessionManager:
                 source=source,
                 content=content,
                 timestamp=datetime.utcnow(),
-                message_type=message_type
+                message_type=message_type,
             )
             self._sessions[session_id].messages.append(message)
             logger.debug(f"Added message to session {session_id} from {source}")
@@ -89,7 +86,7 @@ class SessionManager:
         authors: list,
         published: str,
         summary: str,
-        pdf_url: str
+        pdf_url: str,
     ) -> None:
         """Add a paper to a session"""
         if session_id in self._sessions:
@@ -98,7 +95,7 @@ class SessionManager:
                 authors=authors,
                 published=published,
                 summary=summary,
-                pdf_url=pdf_url
+                pdf_url=pdf_url,
             )
             self._sessions[session_id].papers.append(paper)
             logger.debug(f"Added paper to session {session_id}: {title}")
@@ -116,7 +113,7 @@ class SessionManager:
         sessions = list(self._sessions.values())
         # Sort by created_at descending
         sessions.sort(key=lambda x: x.created_at, reverse=True)
-        return sessions[offset:offset + limit]
+        return sessions[offset : offset + limit]
 
     def _cleanup_oldest_sessions(self) -> None:
         """Remove oldest sessions when limit is exceeded"""
@@ -124,10 +121,7 @@ class SessionManager:
             return
 
         # Sort by created_at
-        sessions_by_age = sorted(
-            self._sessions.items(),
-            key=lambda x: x[1].created_at
-        )
+        sessions_by_age = sorted(self._sessions.items(), key=lambda x: x[1].created_at)
 
         # Remove oldest 10%
         num_to_remove = max(1, len(sessions_by_age) // 10)

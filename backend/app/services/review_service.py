@@ -1,14 +1,15 @@
 """Review service wrapping AutoGen orchestrator"""
 
+import json
 import logging
 import re
-import json
-from typing import AsyncGenerator, Dict, Any
+from collections.abc import AsyncGenerator
 from datetime import datetime
+from typing import Any
 
-from app.orchestrator.litrev_orchestrator import run_litrev
 from app.core.exceptions import LitRevError
 from app.models.responses import ReviewStatus
+from app.orchestrator.litrev_orchestrator import run_litrev
 from app.services.session_manager import SessionManager
 
 logger = logging.getLogger(__name__)
@@ -21,12 +22,8 @@ class ReviewService:
         self.session_manager = session_manager
 
     async def start_review(
-        self,
-        session_id: str,
-        topic: str,
-        papers_limit: int,
-        model: str = "gpt-4o-mini"
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+        self, session_id: str, topic: str, papers_limit: int, model: str = "gpt-4o-mini"
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """
         Start a literature review and stream messages
 
@@ -43,13 +40,13 @@ class ReviewService:
             # Update status to in_progress
             self.session_manager.update_status(session_id, ReviewStatus.IN_PROGRESS)
 
-            logger.info(f"Starting review {session_id}: topic='{topic}', papers={papers_limit}, model={model}")
+            logger.info(
+                f"Starting review {session_id}: topic='{topic}', papers={papers_limit}, model={model}"
+            )
 
             # Run AutoGen orchestrator
             async for message_str in run_litrev(
-                topic=topic,
-                num_papers=papers_limit,
-                model=model
+                topic=topic, num_papers=papers_limit, model=model
             ):
                 # Parse message in "source: content" format
                 parsed = self._parse_message(message_str)
@@ -66,7 +63,7 @@ class ReviewService:
                         session_id=session_id,
                         source=source,
                         content=content,
-                        message_type=message_type
+                        message_type=message_type,
                     )
 
                     # Extract papers if search agent message
@@ -78,7 +75,7 @@ class ReviewService:
                         "source": source,
                         "content": content,
                         "timestamp": datetime.utcnow().isoformat(),
-                        "message_type": message_type
+                        "message_type": message_type,
                     }
 
             # Mark as completed
@@ -89,7 +86,7 @@ class ReviewService:
             yield {
                 "type": "complete",
                 "session_id": session_id,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.utcnow().isoformat(),
             }
 
         except LitRevError as e:
@@ -99,12 +96,12 @@ class ReviewService:
                 session_id=session_id,
                 source="system",
                 content=f"Error: {str(e)}",
-                message_type="error"
+                message_type="error",
             )
             yield {
                 "type": "error",
                 "error": str(e),
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.utcnow().isoformat(),
             }
 
         except Exception as e:
@@ -114,28 +111,22 @@ class ReviewService:
                 session_id=session_id,
                 source="system",
                 content=f"Unexpected error: {str(e)}",
-                message_type="error"
+                message_type="error",
             )
             yield {
                 "type": "error",
                 "error": str(e),
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.utcnow().isoformat(),
             }
 
-    def _parse_message(self, message_str: str) -> Dict[str, str]:
+    def _parse_message(self, message_str: str) -> dict[str, str]:
         """Parse message in 'source: content' format"""
         # Match pattern: "source: content"
-        match = re.match(r'^([^:]+):\s*(.*)$', message_str.strip())
+        match = re.match(r"^([^:]+):\s*(.*)$", message_str.strip())
         if match:
-            return {
-                "source": match.group(1).strip(),
-                "content": match.group(2).strip()
-            }
+            return {"source": match.group(1).strip(), "content": match.group(2).strip()}
         # Fallback: treat as system message
-        return {
-            "source": "system",
-            "content": message_str.strip()
-        }
+        return {"source": "system", "content": message_str.strip()}
 
     def _determine_message_type(self, source: str, content: str) -> str:
         """Determine message type based on source and content"""

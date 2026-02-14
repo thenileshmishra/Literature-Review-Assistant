@@ -1,13 +1,15 @@
 """API response models"""
 
-from pydantic import BaseModel, Field
-from typing import List, Optional, Literal
 from datetime import datetime
 from enum import Enum
+from typing import Literal
+
+from pydantic import BaseModel, Field
 
 
 class ReviewStatus(str, Enum):
     """Review processing status"""
+
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -16,10 +18,13 @@ class ReviewStatus(str, Enum):
 
 class MessageResponse(BaseModel):
     """Agent message response"""
+
     source: str = Field(..., description="Agent name (search_agent, summarizer)")
     content: str = Field(..., description="Message content")
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-    message_type: Literal["search", "summary", "system", "error"] = Field(default="system")
+    message_type: Literal["search", "summary", "system", "error"] = Field(
+        default="system"
+    )
 
     class Config:
         json_schema_extra = {
@@ -27,15 +32,16 @@ class MessageResponse(BaseModel):
                 "source": "search_agent",
                 "content": "Found 5 relevant papers on graph neural networks",
                 "timestamp": "2025-02-10T10:30:00Z",
-                "message_type": "search"
+                "message_type": "search",
             }
         }
 
 
 class PaperResponse(BaseModel):
     """Paper metadata response"""
+
     title: str
-    authors: List[str]
+    authors: list[str]
     published: str = Field(..., description="Publication date (YYYY-MM-DD)")
     summary: str = Field(..., description="Paper abstract")
     pdf_url: str = Field(..., description="URL to PDF")
@@ -47,20 +53,21 @@ class PaperResponse(BaseModel):
                 "authors": ["John Doe", "Jane Smith"],
                 "published": "2024-01-15",
                 "summary": "This paper provides an overview of graph neural networks...",
-                "pdf_url": "https://arxiv.org/pdf/2401.12345.pdf"
+                "pdf_url": "https://arxiv.org/pdf/2401.12345.pdf",
             }
         }
 
 
 class ReviewResponse(BaseModel):
     """Literature review response"""
+
     id: str = Field(..., description="Unique review ID")
     status: ReviewStatus
     request: dict = Field(..., description="Original request parameters")
-    messages: List[MessageResponse] = Field(default_factory=list)
-    papers: List[PaperResponse] = Field(default_factory=list)
+    messages: list[MessageResponse] = Field(default_factory=list)
+    papers: list[PaperResponse] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
 
     class Config:
         json_schema_extra = {
@@ -70,18 +77,19 @@ class ReviewResponse(BaseModel):
                 "request": {
                     "topic": "graph neural networks",
                     "papers_limit": 5,
-                    "model": "gpt-4o-mini"
+                    "model": "gpt-4o-mini",
                 },
                 "messages": [],
                 "papers": [],
                 "created_at": "2025-02-10T10:00:00Z",
-                "completed_at": "2025-02-10T10:05:00Z"
+                "completed_at": "2025-02-10T10:05:00Z",
             }
         }
 
 
 class HealthResponse(BaseModel):
     """Health check response"""
+
     status: str = Field(default="healthy")
     version: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
@@ -91,6 +99,6 @@ class HealthResponse(BaseModel):
             "example": {
                 "status": "healthy",
                 "version": "1.0.0",
-                "timestamp": "2025-02-10T10:00:00Z"
+                "timestamp": "2025-02-10T10:00:00Z",
             }
         }

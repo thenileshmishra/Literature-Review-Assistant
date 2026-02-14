@@ -20,6 +20,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # SETTINGS CLASS
 # ===============================================================
 
+
 class Settings(BaseSettings):
     """
     Application settings loaded from environment variables.
@@ -97,7 +98,7 @@ class BackendSettings(BaseSettings):
     # CORS Configuration
     cors_origins: List[str] = Field(
         default=["http://localhost:3000", "http://localhost:8501"],
-        validation_alias="CORS_ORIGINS"
+        validation_alias="CORS_ORIGINS",
     )
     cors_allow_credentials: bool = True
     cors_allow_methods: List[str] = ["*"]
@@ -127,6 +128,7 @@ class BackendSettings(BaseSettings):
 # SETTINGS FACTORY
 # ===============================================================
 
+
 @lru_cache
 def get_settings() -> Settings:
     """
@@ -145,5 +147,3 @@ def get_settings() -> Settings:
 def get_backend_settings() -> BackendSettings:
     """Get cached backend settings instance"""
     return BackendSettings()
-
-

@@ -11,12 +11,16 @@ from __future__ import annotations
 
 import logging
 import sys
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    pass
 
 
 # ===============================================================
 # LOGGING SETUP
 # ===============================================================
+
 
 def setup_logging(
     level: str = "INFO",
@@ -30,9 +34,7 @@ def setup_logging(
         format_string: Custom log format (optional)
     """
     if format_string is None:
-        format_string = (
-            "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
-        )
+        format_string = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
 
     logging.basicConfig(
         level=getattr(logging, level.upper()),
@@ -52,6 +54,7 @@ def setup_logging(
 # ===============================================================
 # LOGGER FACTORY
 # ===============================================================
+
 
 def get_logger(name: str) -> logging.Logger:
     """

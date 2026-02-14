@@ -27,6 +27,7 @@ logger = get_logger(__name__)
 # BASE AGENT CLASS
 # ===============================================================
 
+
 class BaseAgent(ABC):
     """
     Abstract base class for literature review agents.
@@ -154,7 +155,5 @@ class BaseAgent(ABC):
             RuntimeError: If agent hasn't been built yet
         """
         if self._agent is None:
-            raise RuntimeError(
-                f"Agent {self.name} not built. Call build() first."
-            )
+            raise RuntimeError(f"Agent {self.name} not built. Call build() first.")
         return self._agent

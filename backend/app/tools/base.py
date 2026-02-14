@@ -23,6 +23,7 @@ logger = get_logger(__name__)
 # BASE TOOL CLASS
 # ===============================================================
 
+
 class BaseTool(ABC):
     """
     Abstract base class for literature review tools.

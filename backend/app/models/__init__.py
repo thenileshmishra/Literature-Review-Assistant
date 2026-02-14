@@ -6,7 +6,7 @@ from app.models.responses import (
     ReviewStatus,
     MessageResponse,
     PaperResponse,
-    HealthResponse
+    HealthResponse,
 )
 
 __all__ = [
@@ -15,5 +15,5 @@ __all__ = [
     "ReviewStatus",
     "MessageResponse",
     "PaperResponse",
-    "HealthResponse"
+    "HealthResponse",
 ]
