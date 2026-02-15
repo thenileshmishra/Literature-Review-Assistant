@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Card, Space, Tag, Typography, Button, Empty } from 'antd'
-import { Bot, AlertCircle } from 'lucide-react'
+import { Bot, AlertCircle, ClipboardCheck } from 'lucide-react'
 import type { Message, ReviewStatus } from '@/lib/types/api'
 
-type ResearchStage = 'reviewing' | 'selecting' | 'summarizing'
+type ResearchStage = 'reviewing' | 'selecting' | 'summarizing' | 'critiquing' | 'revising'
 
 interface MessageDisplayProps {
   messages: Message[]
@@ -23,13 +23,50 @@ interface SummaryCardProps {
   summaries: Message[]
 }
 
+interface CritiqueCardProps {
+  critique: Message
+}
+
 const STAGE_LABELS: Record<ResearchStage, string> = {
   reviewing: 'Literature review',
   selecting: 'Selecting papers',
   summarizing: 'Generating summaries',
+  critiquing: 'Critic reviewing draft',
+  revising: 'Revising based on feedback',
 }
 
-function ResearchProgressCard({ stage, processedPapers, totalPapers, percent }: ResearchProgressCardProps) {
+function CritiqueCard({ critique }: CritiqueCardProps) {
+  const content = critique.content
+    .replace(/^\s*critic\s*:\s*/i, '')
+    .trim()
+
+  const lines = content.split('\n')
+
+  return (
+    <Card
+      className="chat-card"
+      style={{ borderLeft: '3px solid #faad14' }}
+    >
+      <Space direction="vertical" size="small" style={{ width: '100%' }}>
+        <Space align="center" size="middle">
+          <ClipboardCheck className="h-5 w-5" style={{ color: '#faad14' }} />
+          <Typography.Text strong>Critic Feedback</Typography.Text>
+          <Tag color="gold">Review</Tag>
+        </Space>
+        <div className="text-sm" style={{ lineHeight: '1.7' }}>
+          {lines.map((line, i) => (
+            <span key={i}>
+              {line}
+              {i < lines.length - 1 && <br />}
+            </span>
+          ))}
+        </div>
+      </Space>
+    </Card>
+  )
+}
+
+function ResearchProgressCard({ stage }: ResearchProgressCardProps) {
   return (
     <Card className="chat-card">
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
@@ -56,9 +93,7 @@ function SummaryCard({ summaries }: SummaryCardProps) {
       : /(\[[^\]]+\]\([^)]+\))/g
     let lastIndex = 0
     let match: RegExpExecArray | null
-    useEffect(() => {
-    console.log('Summaries received:', summaries)
-  }, [summaries])
+
     while ((match = regex.exec(text)) !== null) {
       if (match.index > lastIndex) {
         nodes.push(text.slice(lastIndex, match.index))
@@ -176,10 +211,15 @@ export function MessageDisplay({ messages, status }: MessageDisplayProps) {
     if (message.message_type === 'summary') return true
     return /summarizer/i.test(message.source)
   }
+  const isCritiqueMessage = (message: Message) => {
+    if (message.message_type === 'critique') return true
+    return message.source === 'critic'
+  }
 
   useEffect(() => {
     const searchMessages = messages.filter(isSearchMessage)
     const summaryMessages = messages.filter(isSummaryMessage)
+    const critiqueMessages = messages.filter(isCritiqueMessage)
 
     let nextTotal = 0
     for (const message of searchMessages) {
@@ -204,8 +244,15 @@ export function MessageDisplay({ messages, status }: MessageDisplayProps) {
       nextProcessed = Math.min(nextProcessed, nextTotal)
     }
 
+    // Determine stage — critic stages take priority over summarizing
     let nextStage: ResearchStage = 'reviewing'
-    if (summaryMessages.length > 0) {
+    const lastMessageSource = messages.length > 0 ? messages[messages.length - 1].source : ''
+
+    if (critiqueMessages.length > 0 && lastMessageSource === 'critic') {
+      nextStage = 'critiquing'
+    } else if (critiqueMessages.length > 0 && /summarizer/i.test(lastMessageSource)) {
+      nextStage = 'revising'
+    } else if (summaryMessages.length > 0) {
       nextStage = 'summarizing'
     } else if (nextTotal > 0) {
       nextStage = 'selecting'
@@ -222,7 +269,13 @@ export function MessageDisplay({ messages, status }: MessageDisplayProps) {
     const summaries = messages.filter(isSummaryMessage)
     if (summaries.length > 0) return summaries
 
-    return messages.filter((message) => !isSearchMessage(message) && message.message_type !== 'error')
+    return messages.filter((message) => !isSearchMessage(message) && !isCritiqueMessage(message) && message.message_type !== 'error')
+  }, [messages])
+
+  // Last critique message to show alongside progress
+  const lastCritiqueMessage = useMemo(() => {
+    const critiques = messages.filter(isCritiqueMessage)
+    return critiques.length > 0 ? critiques[critiques.length - 1] : null
   }, [messages])
 
   const percent =
@@ -231,14 +284,18 @@ export function MessageDisplay({ messages, status }: MessageDisplayProps) {
       : 0
 
   if (status === 'completed') {
-  const lastSummary =
-    summaryMessages.length > 0
-      ? [summaryMessages[summaryMessages.length - 1]]
-      : []
+    const lastSummary =
+      summaryMessages.length > 0
+        ? [summaryMessages[summaryMessages.length - 1]]
+        : []
 
-  return <SummaryCard summaries={lastSummary} />
-}
-
+    return (
+      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        {lastCritiqueMessage && <CritiqueCard critique={lastCritiqueMessage} />}
+        <SummaryCard summaries={lastSummary} />
+      </Space>
+    )
+  }
 
   if (status === 'failed') {
     return (
@@ -262,12 +319,15 @@ export function MessageDisplay({ messages, status }: MessageDisplayProps) {
 
   if (status === 'in_progress') {
     return (
-      <ResearchProgressCard
-        stage={stage}
-        processedPapers={processedPapers}
-        totalPapers={totalPapers}
-        percent={percent}
-      />
+      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        {lastCritiqueMessage && <CritiqueCard critique={lastCritiqueMessage} />}
+        <ResearchProgressCard
+          stage={stage}
+          processedPapers={processedPapers}
+          totalPapers={totalPapers}
+          percent={percent}
+        />
+      </Space>
     )
   }
 
