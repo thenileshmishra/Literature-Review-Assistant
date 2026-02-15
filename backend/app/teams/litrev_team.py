@@ -1,10 +1,10 @@
 """
 litrev_team.py
 ==============
-Literature review team coordinating search and summarizer agents.
+Literature review team coordinating search, summarizer, and critic agents.
 
-Uses AutoGen's RoundRobinGroupChat to orchestrate the two-agent
-workflow for producing literature reviews.
+Uses AutoGen's RoundRobinGroupChat to orchestrate the three-agent
+workflow for producing and refining literature reviews.
 """
 
 from __future__ import annotations
@@ -12,14 +12,16 @@ from __future__ import annotations
 from typing import AsyncGenerator, List
 
 from autogen_agentchat.agents import AssistantAgent
+from autogen_agentchat.conditions import MaxMessageTermination, TextMentionTermination
 from autogen_agentchat.messages import TextMessage
 from autogen_agentchat.teams import RoundRobinGroupChat
 
-from app.teams.base import BaseTeam
+from app.agents.critic_agent import CriticAgent
 from app.agents.search_agent import SearchAgent
 from app.agents.summarizer_agent import SummarizerAgent
-from app.core.logging_config import get_logger
 from app.core.exceptions import TeamError
+from app.core.logging_config import get_logger
+from app.teams.base import BaseTeam
 
 logger = get_logger(__name__)
 
@@ -31,15 +33,16 @@ logger = get_logger(__name__)
 
 class LitRevTeam(BaseTeam):
     """
-    Two-agent team for literature review generation.
+    Three-agent team for literature review generation with reflection.
 
-    Coordinates a search agent and summarizer agent using
-    RoundRobinGroupChat to produce literature reviews from
-    arXiv papers.
+    Coordinates a search agent, summarizer agent, and critic agent using
+    RoundRobinGroupChat. The critic reviews the draft and provides
+    feedback; the summarizer revises once before critic approves.
 
     Attributes:
         search_agent: Agent for searching papers
         summarizer_agent: Agent for summarizing papers
+        critic_agent: Agent for reviewing and scoring the draft
         model: LLM model identifier
         api_key: API key for model access
     """
@@ -48,7 +51,7 @@ class LitRevTeam(BaseTeam):
         self,
         model: str,
         api_key: str,
-        max_turns: int = 2,
+        max_turns: int = 6,
     ) -> None:
         """
         Initialize the literature review team.
@@ -56,7 +59,7 @@ class LitRevTeam(BaseTeam):
         Args:
             model: LLM model to use for agents
             api_key: OpenAI API key
-            max_turns: Maximum conversation turns
+            max_turns: Maximum conversation turns (default 6 for one reflection cycle)
         """
         super().__init__(
             name="litrev_team",
@@ -68,6 +71,7 @@ class LitRevTeam(BaseTeam):
 
         self._search_agent = SearchAgent(model=model, api_key=api_key)
         self._summarizer_agent = SummarizerAgent(model=model, api_key=api_key)
+        self._critic_agent = CriticAgent(model=model, api_key=api_key)
         self._team: RoundRobinGroupChat | None = None
 
         logger.debug(f"LitRevTeam initialized with model={model}")
@@ -81,16 +85,19 @@ class LitRevTeam(BaseTeam):
         Get the list of agent participants.
 
         Returns:
-            List[AssistantAgent]: Built search and summarizer agents
+            List[AssistantAgent]: Built search, summarizer, and critic agents
         """
         return [
             self._search_agent.build(),
             self._summarizer_agent.build(),
+            self._critic_agent.build(),
         ]
 
     def build(self) -> RoundRobinGroupChat:
         """
         Build and return the RoundRobinGroupChat team.
+
+        Termination: stops when critic says APPROVED or after max_turns.
 
         Returns:
             RoundRobinGroupChat: Configured team instance
@@ -100,9 +107,11 @@ class LitRevTeam(BaseTeam):
 
         participants = self._get_participants()
 
+        termination = TextMentionTermination("APPROVED") | MaxMessageTermination(self.max_turns)
+
         self._team = RoundRobinGroupChat(
             participants=participants,
-            max_turns=self.max_turns,
+            termination_condition=termination,
         )
 
         logger.info(f"Built LitRevTeam with {len(participants)} agents")
