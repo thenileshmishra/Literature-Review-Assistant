@@ -134,6 +134,8 @@ class ReviewService:
             return "search"
         elif source == "summarizer":
             return "summary"
+        elif source == "critic":
+            return "critique"
         elif "error" in content.lower():
             return "error"
         return "system"

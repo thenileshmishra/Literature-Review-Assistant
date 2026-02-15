@@ -133,12 +133,29 @@ function SummaryCard({ summaries }: SummaryCardProps) {
 
   const renderTextBlock = (content: string) => {
     const lines = content.split('\n')
-    return lines.map((line, index) => (
-      <span key={`line-${index}`}>
-        {renderInlineMarkdown(line)}
-        {index < lines.length - 1 && <br />}
-      </span>
-    ))
+    return lines.map((line, index) => {
+      // Heading detection: # → h3, ## → h4, ### → h5
+      const h3Match = line.match(/^###\s+(.+)/)
+      const h2Match = line.match(/^##\s+(.+)/)
+      const h1Match = line.match(/^#\s+(.+)/)
+
+      if (h3Match) {
+        return <h5 key={`line-${index}`} style={{ margin: '12px 0 4px', fontWeight: 600 }}>{renderInlineMarkdown(h3Match[1])}</h5>
+      }
+      if (h2Match) {
+        return <h4 key={`line-${index}`} style={{ margin: '14px 0 4px', fontWeight: 600 }}>{renderInlineMarkdown(h2Match[1])}</h4>
+      }
+      if (h1Match) {
+        return <h3 key={`line-${index}`} style={{ margin: '16px 0 6px', fontWeight: 700 }}>{renderInlineMarkdown(h1Match[1])}</h3>
+      }
+
+      return (
+        <span key={`line-${index}`}>
+          {renderInlineMarkdown(line)}
+          {index < lines.length - 1 && <br />}
+        </span>
+      )
+    })
   }
 
   const cleanContent = (content: string) => {
