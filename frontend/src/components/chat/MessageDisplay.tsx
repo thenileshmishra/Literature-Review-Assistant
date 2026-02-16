@@ -5,7 +5,7 @@ import { Card, Space, Tag, Typography, Button, Empty } from 'antd'
 import { Bot, AlertCircle, ClipboardCheck } from 'lucide-react'
 import type { Message, ReviewStatus } from '@/lib/types/api'
 
-type ResearchStage = 'reviewing' | 'selecting' | 'summarizing' | 'critiquing' | 'revising'
+type ResearchStage = 'planning' | 'reviewing' | 'selecting' | 'summarizing' | 'critiquing' | 'revising'
 
 interface MessageDisplayProps {
   messages: Message[]
@@ -28,6 +28,7 @@ interface CritiqueCardProps {
 }
 
 const STAGE_LABELS: Record<ResearchStage, string> = {
+  planning: 'Decomposing research topic',
   reviewing: 'Literature review',
   selecting: 'Selecting papers',
   summarizing: 'Generating summaries',
@@ -223,6 +224,7 @@ export function MessageDisplay({ messages, status }: MessageDisplayProps) {
     return null
   }
 
+  const isPlannerMessage = (message: Message) => message.source === 'planner' || message.message_type === 'planning'
   const isSearchMessage = (message: Message) => message.source === 'search_agent'
   const isSummaryMessage = (message: Message) => {
     if (message.message_type === 'summary') return true
@@ -234,6 +236,7 @@ export function MessageDisplay({ messages, status }: MessageDisplayProps) {
   }
 
   useEffect(() => {
+    const plannerMessages = messages.filter(isPlannerMessage)
     const searchMessages = messages.filter(isSearchMessage)
     const summaryMessages = messages.filter(isSummaryMessage)
     const critiqueMessages = messages.filter(isCritiqueMessage)
@@ -275,6 +278,8 @@ export function MessageDisplay({ messages, status }: MessageDisplayProps) {
       nextStage = 'selecting'
     } else if (searchMessages.length > 0) {
       nextStage = 'reviewing'
+    } else if (plannerMessages.length > 0) {
+      nextStage = 'planning'
     }
 
     setTotalPapers(nextTotal)

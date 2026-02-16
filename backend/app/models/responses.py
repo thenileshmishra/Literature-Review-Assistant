@@ -22,7 +22,7 @@ class MessageResponse(BaseModel):
     source: str = Field(..., description="Agent name (search_agent, summarizer)")
     content: str = Field(..., description="Message content")
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-    message_type: Literal["search", "summary", "system", "error"] = Field(
+    message_type: Literal["search", "summary", "critique", "planning", "system", "error"] = Field(
         default="system"
     )
 
