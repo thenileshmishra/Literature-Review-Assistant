@@ -68,7 +68,7 @@ class SemanticScholarTool(BaseTool):
     # SEARCH IMPLEMENTATION
     # ===============================================================
 
-    def search(
+    def semantic_scholar_search(
         self,
         query: str,
         max_results: int = 5,
@@ -151,4 +151,4 @@ class SemanticScholarTool(BaseTool):
         Returns:
             Callable: The search method
         """
-        return self.search
+        return self.semantic_scholar_search
