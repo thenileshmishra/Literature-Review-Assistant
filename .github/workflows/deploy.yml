@@ -34,7 +34,7 @@ jobs:
       - name: Build & Push Frontend
         run: |
           FRONTEND_URI=143873723946.dkr.ecr.us-east-1.amazonaws.com/agent_autogen_frontend
-          docker build --build-arg NEXT_PUBLIC_API_URL= -t $FRONTEND_URI:latest ./frontend
+          docker build -t $FRONTEND_URI:latest ./frontend
           docker push $FRONTEND_URI:latest
 
       - name: Copy Nginx Config to EC2
@@ -65,14 +65,14 @@ jobs:
             docker pull $BACKEND_URI:latest
             docker pull $FRONTEND_URI:latest
 
-            docker stop backend || true
-            docker rm backend || true
-            docker stop frontend || true
-            docker rm frontend || true
-            docker stop nginx || true
-            docker rm nginx || true
+            # Stop all app containers
+            docker stop backend frontend nginx 2>/dev/null || true
+            docker rm backend frontend nginx 2>/dev/null || true
 
-            docker network create app-network || true
+            # Kill any host-level process using port 80 (e.g. system nginx)
+            sudo fuser -k 80/tcp 2>/dev/null || true
+
+            docker network create app-network 2>/dev/null || true
 
             docker run -d --name backend \
               --network app-network \
@@ -84,7 +84,6 @@ jobs:
             docker run -d --name frontend \
               --network app-network \
               --restart unless-stopped \
-              -e NEXT_PUBLIC_API_URL="http://agent.nileshmishra.info" \
               $FRONTEND_URI:latest
 
             docker run -d --name nginx \
