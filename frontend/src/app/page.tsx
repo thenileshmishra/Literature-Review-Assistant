@@ -8,7 +8,7 @@ import { MessageDisplay } from '@/components/chat/MessageDisplay'
 import { PaperList } from '@/components/papers/PaperList'
 import type { CreateReviewRequest } from '@/lib/types/api'
 import { createReview } from '@/lib/api/reviews'
-import { useReviewStream } from '@/lib/hooks/useReviewStream'
+import { useReviewStream, clearSession, getStoredReviewId } from '@/lib/hooks/useReviewStream'
 
 const { Content } = Layout
 const { Text } = Typography
@@ -23,6 +23,12 @@ export default function Home() {
   const [themeInitialized, setThemeInitialized] = useState(false)
 
   const { messages, status, isStreaming, error: streamError, startStream } = useReviewStream(reviewId)
+
+  // Restore previous session on mount
+  useEffect(() => {
+    const storedId = getStoredReviewId()
+    if (storedId) setReviewId(storedId)
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -53,8 +59,8 @@ export default function Home() {
     try {
       setIsCreating(true)
       setError(null)
+      clearSession()
 
-      // Create review
       const review = await createReview(request)
       setReviewId(review.id)
 
@@ -72,6 +78,7 @@ export default function Home() {
   }, [reviewId, startStream])
 
   const handleNewSearch = () => {
+    clearSession()
     setReviewId(null)
     setError(null)
   }
