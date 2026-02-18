@@ -1,327 +1,87 @@
-# 📚 Literature Review Assistant
+# Literature Review Assistant
 
-AI-powered literature review assistant that helps researchers discover and synthesize academic papers from arXiv using multi-agent collaboration.
+An AI-powered research tool that automates literature reviews using a multi-agent system. Enter a topic, and a team of specialized AI agents searches academic databases, evaluates papers, and produces a structured literature review — all streamed in real time.
 
-## Features
+**Live:** [agent.nileshmishra.info](https://agent.nileshmishra.info)
 
-- **Microservices Architecture**: Modern 2-service architecture with FastAPI backend and Next.js frontend
-- **Multi-Agent System**: Uses AutoGen AgentChat with specialized search and summarizer agents
-- **arXiv Integration**: Searches and retrieves papers directly from arXiv
-- **Real-time Streaming**: SSE (Server-Sent Events) for live agent updates
-- **Modern UI**: Beautiful dark-themed Next.js interface with Tailwind CSS
-- **Docker Ready**: Production-ready containerization with Docker Compose
+## How It Works
+
+1. **PlannerAgent** decomposes a broad topic into focused sub-queries
+2. **SearchAgent** searches arXiv and Semantic Scholar, deduplicates results
+3. **SummarizerAgent** writes a structured Markdown literature review
+4. **CriticAgent** scores the draft on coverage, clarity, and relevance — if it doesn't pass, the review is revised and re-evaluated
+
+All agent activity streams to the browser via SSE, so you see progress as it happens.
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     CLIENT (Browser)                             │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│               FRONTEND SERVICE (Next.js)                         │
-│  - Port 3000                                                     │
-│  - TypeScript + Tailwind CSS                                    │
-│  - Server-Sent Events (SSE) for streaming                       │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼ HTTP/SSE
-┌─────────────────────────────────────────────────────────────────┐
-│               BACKEND SERVICE (FastAPI)                          │
-│  - Port 8000                                                     │
-│  - RESTful API + SSE endpoints                                  │
-│  - Wraps AutoGen orchestrator                                   │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    AUTOGEN MULTI-AGENT SYSTEM                    │
-│                                                                  │
-│              LitRevOrchestrator → LitRevTeam                    │
-│                  ├── SearchAgent                                │
-│                  └── SummarizerAgent                            │
-└─────────────────────────────────────────────────────────────────┘
+Browser → Next.js (React) → Nginx (reverse proxy) → FastAPI → AutoGen Multi-Agent System
+                                                                  ├── PlannerAgent
+                                                                  ├── SearchAgent (arXiv + Semantic Scholar)
+                                                                  ├── SummarizerAgent
+                                                                  └── CriticAgent (reflection loop)
 ```
+
+**Backend:** FastAPI, AutoGen AgentChat, OpenAI GPT-4o, Pydantic, SSE-Starlette
+**Frontend:** Next.js 14, TypeScript, Ant Design, Tailwind CSS, EventSource (SSE)
+**Infra:** Docker, Nginx, AWS EC2 + ECR, GitHub Actions CI/CD, Let's Encrypt SSL
 
 ## Quick Start
 
 ### Prerequisites
 
-- **Python 3.10+** (for backend)
-- **Node.js 20+** (for frontend)
-- **Docker & Docker Compose** (for containerized deployment)
-- **OpenAI API Key**
+- Python 3.10+, Node.js 20+, Docker
+- OpenAI API key
 
-### Option 1: Docker Compose (Recommended)
+### Run with Docker Compose
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/nileshmishra/litrev-assistant.git
-   cd litrev-assistant
-   ```
-
-2. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env and add your OpenAI API key
-   ```
-
-3. **Build and run with Docker Compose**
-   ```bash
-   docker-compose up --build
-   ```
-
-4. **Access the application**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000
-   - API Docs: http://localhost:8000/docs
-
-### Option 2: Local Development
-
-#### Backend Setup
-
-1. **Install Python dependencies**
-   ```bash
-   pip install -r backend/requirements.txt
-   ```
-
-2. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env and add your OpenAI API key
-   ```
-
-3. **Run the backend**
-   ```bash
-   cd backend
-   uvicorn app.main:app --reload --port 8000
-   ```
-
-#### Frontend Setup
-
-1. **Install Node.js dependencies**
-   ```bash
-   cd frontend
-   npm install
-   ```
-
-2. **Set up environment variables**
-   ```bash
-   cp .env.local.example .env.local
-   # Edit .env.local if needed (default: http://localhost:8000)
-   ```
-
-3. **Run the frontend**
-   ```bash
-   npm run dev
-   ```
-
-4. **Access the application**
-   - Frontend: http://localhost:3000
-   - Backend: http://localhost:8000
-
-## Environment Variables
-
-### Backend (.env)
 ```bash
-# Required
-OPENAI_API_KEY=sk-your-openai-api-key-here
+git clone https://github.com/thenileshmishra/Literature-Review-Assistant.git
+cd Literature-Review-Assistant
 
-# Optional (with defaults)
-DEFAULT_MODEL=gpt-4o-mini
-LOG_LEVEL=INFO
-DEBUG=false
-PAPERS_PER_REVIEW=5
-API_PORT=8000
-CORS_ORIGINS=http://localhost:3000
+cp .env.example .env
+# Add your OPENAI_API_KEY to .env
+
+docker-compose up --build
 ```
 
-### Frontend (.env.local)
+Open [localhost:3000](http://localhost:3000).
+
+### Local Development
+
 ```bash
-NEXT_PUBLIC_API_URL=http://localhost:8000
-NEXT_PUBLIC_APP_NAME=Literature Review Assistant
+# Backend
+pip install -r backend/requirements.txt
+cd backend && uvicorn app.main:app --reload --port 8000
+
+# Frontend (separate terminal)
+cd frontend && npm install && npm run dev
 ```
 
 ## Project Structure
 
 ```
-.
-├── backend/                    # FastAPI Backend Service
-│   ├── app/
-│   │   ├── main.py            # FastAPI entry point
-│   │   ├── api/               # API routes
-│   │   │   └── routes/
-│   │   │       ├── health.py  # Health checks
-│   │   │       ├── reviews.py # Review CRUD
-│   │   │       └── stream.py  # SSE streaming
-│   │   ├── agents/            # SearchAgent, SummarizerAgent
-│   │   ├── orchestrator/      # LitRevOrchestrator
-│   │   ├── teams/             # LitRevTeam
-│   │   ├── tools/             # ArxivSearchTool
-│   │   ├── core/              # Utilities
-│   │   ├── config/            # Settings
-│   │   ├── models/            # Request/Response models
-│   │   ├── schemas/           # Domain models
-│   │   └── services/          # Business logic
-│   ├── tests/
-│   ├── Dockerfile
-│   ├── requirements.txt
-│   └── requirements-dev.txt
-│
-├── frontend/                   # Next.js Frontend Service
-│   ├── src/
-│   │   ├── app/               # Next.js App Router
-│   │   │   ├── layout.tsx
-│   │   │   ├── page.tsx
-│   │   │   └── globals.css
-│   │   ├── components/        # React components
-│   │   │   ├── ui/            # shadcn/ui components
-│   │   │   ├── layout/
-│   │   │   ├── search/
-│   │   │   ├── chat/
-│   │   │   └── papers/
-│   │   ├── lib/
-│   │   │   ├── api/           # API client
-│   │   │   ├── hooks/         # Custom hooks
-│   │   │   └── types/         # TypeScript types
-│   │   └── providers/         # React providers
-│   ├── Dockerfile
-│   ├── package.json
-│   └── next.config.js
-│
-├── docker-compose.yml          # Multi-service orchestration
-├── docker-compose.dev.yml      # Development overrides
-├── Makefile                    # Build commands
-└── README.md
-```
+backend/
+  app/
+    agents/        # PlannerAgent, SearchAgent, SummarizerAgent, CriticAgent
+    tools/         # ArxivSearchTool, SemanticScholarTool
+    orchestrator/  # LitRevOrchestrator — wires agents into a team
+    api/routes/    # REST + SSE streaming endpoints
+    services/      # Business logic (review lifecycle)
+    config/        # Pydantic settings
 
-## API Endpoints
-
-### Health
-- `GET /health` - Health check
-- `GET /ready` - Readiness probe
-
-### Reviews
-- `POST /api/v1/reviews` - Create a new review
-- `GET /api/v1/reviews/{id}` - Get review details
-- `GET /api/v1/reviews/{id}/stream` - Stream review progress (SSE)
-- `DELETE /api/v1/reviews/{id}` - Delete a review
-- `GET /api/v1/reviews` - List reviews
-
-For detailed API documentation, visit `/docs` after starting the backend.
-
-## Development
-
-### Using Makefile
-
-```bash
-# Install dependencies
-make install
-
-# Run development servers
-make dev                 # Both services
-make dev-backend         # Backend only
-make dev-frontend        # Frontend only
-
-# Docker commands
-make build               # Build Docker images
-make up                  # Start services
-make down                # Stop services
-
-# Testing
-make test                # Run all tests
-make test-backend        # Backend tests
-make test-frontend       # Frontend tests
-```
-
-### Manual Commands
-
-**Backend Development:**
-```bash
-cd backend
-uvicorn app.main:app --reload --port 8000
-```
-
-**Frontend Development:**
-```bash
-cd frontend && npm run dev
-```
-
-**Run Tests:**
-```bash
-# Backend
-cd backend && pytest tests -v
-
-# Frontend
-cd frontend && npm test
+frontend/
+  src/
+    app/           # Next.js App Router (single-page app)
+    components/    # SearchForm, MessageDisplay, PaperList, PaperCard
+    lib/           # API client, hooks (useReviewStream), types
 ```
 
 ## Deployment
 
-### Docker Production Build
+Pushes to `main` trigger a GitHub Actions pipeline that:
 
-```bash
-# Build production images
-docker-compose -f docker-compose.yml build
-
-# Run in production mode
-docker-compose -f docker-compose.yml up -d
-
-# View logs
-docker-compose logs -f backend
-docker-compose logs -f frontend
-```
-
-### AWS Deployment
-
-For AWS deployment with ECS/EKS, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
-
-## Technology Stack
-
-### Backend
-- **Framework**: FastAPI
-- **Server**: Uvicorn
-- **AI**: AutoGen AgentChat 0.4+
-- **LLM**: OpenAI GPT-4o-mini/GPT-4o
-- **Data Source**: arXiv API
-- **Validation**: Pydantic 2.0+
-- **Streaming**: SSE-Starlette
-
-### Frontend
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Components**: shadcn/ui (Radix UI)
-- **State Management**: TanStack Query
-- **HTTP Client**: Axios
-- **Streaming**: EventSource (SSE)
-
-### Infrastructure
-- **Containerization**: Docker
-- **Orchestration**: Docker Compose
-- **Deployment**: AWS ECS/EKS (future)
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- [AutoGen](https://github.com/microsoft/autogen) - Multi-agent framework
-- [arXiv API](https://arxiv.org/help/api) - Academic paper database
-- [OpenAI](https://openai.com/) - LLM provider
-- [Next.js](https://nextjs.org/) - React framework
-- [FastAPI](https://fastapi.tiangolo.com/) - Modern Python web framework
-
-## Support
-
-For issues and questions, please open an issue on GitHub.
+1. Builds and pushes Docker images to AWS ECR
+2. SSHs into EC2, pulls new images, restarts containers
+3. Nginx handles SSL termination with Let's Encrypt certs

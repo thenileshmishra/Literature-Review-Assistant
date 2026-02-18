@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ConfigProvider, Layout, Alert, Button, Space, Typography, Spin, theme as antdTheme } from 'antd'
+import { Card, ConfigProvider, Layout, Alert, Button, Skeleton, Space, theme as antdTheme } from 'antd'
 import { Header } from '@/components/layout/Header'
 import { SearchForm } from '@/components/search/SearchForm'
 import { MessageDisplay } from '@/components/chat/MessageDisplay'
@@ -11,7 +11,6 @@ import { createReview } from '@/lib/api/reviews'
 import { useReviewStream, clearSession, getStoredReviewId } from '@/lib/hooks/useReviewStream'
 
 const { Content } = Layout
-const { Text } = Typography
 const { defaultAlgorithm, darkAlgorithm } = antdTheme
 const THEME_KEY = 'app-theme'
 
@@ -110,11 +109,13 @@ export default function Home() {
                   ← New search
                 </Button>
 
-                {isStreaming && (
-                  <Space align="center">
-                    <Spin size="small" />
-                    <Text type="secondary">Processing review...</Text>
-                  </Space>
+                {isStreaming && messages.length === 0 && (
+                  <Card className="chat-card">
+                    <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                      <Skeleton.Input active size="small" style={{ width: 200 }} />
+                      <Skeleton active paragraph={{ rows: 3 }} />
+                    </Space>
+                  </Card>
                 )}
 
                 {messages.length > 0 && (

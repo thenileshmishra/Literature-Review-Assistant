@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Card, Spin, Empty, Typography } from 'antd'
+import { Card, Skeleton, Empty, Typography } from 'antd'
 import { PaperCard } from './PaperCard'
 import { FileText } from 'lucide-react'
 import { getReview } from '@/lib/api/reviews'
@@ -36,14 +36,18 @@ export function PaperList({ reviewId }: PaperListProps) {
 
   if (isLoading) {
     return (
-      <Card className="panel-card">
-        <div className="flex items-center justify-center py-10">
-          <Spin size="large" />
-          <Typography.Text type="secondary" className="ml-3">
-            Loading papers...
-          </Typography.Text>
+      <div className="space-y-4">
+        <Card className="panel-card">
+          <Skeleton.Input active size="small" style={{ width: 140 }} />
+        </Card>
+        <div className="grid gap-4 md:grid-cols-2">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="panel-card" bordered={false}>
+              <Skeleton active title={{ width: '80%' }} paragraph={{ rows: 4, width: ['60%', '100%', '100%', '40%'] }} />
+            </Card>
+          ))}
         </div>
-      </Card>
+      </div>
     )
   }
 
