@@ -4,7 +4,7 @@
 
 export type ReviewStatus = 'pending' | 'in_progress' | 'completed' | 'failed'
 
-export type MessageType = 'search' | 'summary' | 'system' | 'error'
+export type MessageType = 'search' | 'summary' | 'critique' | 'planning' | 'system' | 'error'
 
 export interface Message {
   source: string
