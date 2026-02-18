@@ -56,10 +56,10 @@ class Settings(BaseSettings):
     # Search Configuration
     papers_per_review: int = Field(
         default=5,
-        ge=5,
-        le=5,
+        ge=1,
+        le=20,
         validation_alias="PAPERS_PER_REVIEW",
-        description="Fixed number of papers per review",
+        description="Number of papers per review",
     )
 
     # Logging Configuration
@@ -97,7 +97,7 @@ class BackendSettings(BaseSettings):
 
     # CORS Configuration
     cors_origins: List[str] = Field(
-        default=["http://localhost:3000", "http://localhost:8501"],
+        default=["http://localhost:3000"],
         validation_alias="CORS_ORIGINS",
     )
     cors_allow_credentials: bool = True
@@ -117,11 +117,6 @@ class BackendSettings(BaseSettings):
         case_sensitive = False
         extra = "ignore"
 
-    def parse_cors_origins(self) -> List[str]:
-        """Parse CORS origins from comma-separated string or list"""
-        if isinstance(self.cors_origins, str):
-            return [origin.strip() for origin in self.cors_origins.split(",")]
-        return self.cors_origins
 
 
 # ===============================================================

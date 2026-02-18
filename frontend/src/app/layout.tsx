@@ -3,7 +3,6 @@ import Script from "next/script"
 import { Space_Grotesk } from "next/font/google"
 import "antd/dist/reset.css"
 import "./globals.css"
-import { QueryProvider } from "@/providers/QueryProvider"
 
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"] })
 
@@ -34,11 +33,9 @@ export default function RootLayout({
         `}</Script>
       </head>
       <body className={spaceGrotesk.className}>
-        <QueryProvider>
-          <main className="min-h-screen">
-            {children}
-          </main>
-        </QueryProvider>
+        <main className="min-h-screen">
+          {children}
+        </main>
       </body>
     </html>
   )

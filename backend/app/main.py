@@ -30,10 +30,9 @@ app = FastAPI(
 )
 
 # Configure CORS
-cors_origins = settings.parse_cors_origins()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=settings.cors_origins,
     allow_credentials=settings.cors_allow_credentials,
     allow_methods=settings.cors_allow_methods,
     allow_headers=settings.cors_allow_headers,
@@ -49,7 +48,7 @@ app.include_router(stream.router, prefix="/api/v1", tags=["Streaming"])
 async def startup_event():
     """Application startup event"""
     logger.info(f"Starting {settings.api_title} v{settings.api_version}")
-    logger.info(f"CORS origins: {cors_origins}")
+    logger.info(f"CORS origins: {settings.cors_origins}")
     logger.info(f"Debug mode: {settings.debug}")
 
 

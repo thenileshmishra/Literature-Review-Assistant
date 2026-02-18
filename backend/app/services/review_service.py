@@ -9,7 +9,7 @@ from typing import Any
 
 from app.core.exceptions import LitRevError
 from app.models.responses import ReviewStatus
-from app.orchestrator.litrev_orchestrator import run_litrev
+from app.orchestrator.litrev_orchestrator import LitRevOrchestrator
 from app.services.session_manager import SessionManager
 
 logger = logging.getLogger(__name__)
@@ -45,8 +45,9 @@ class ReviewService:
             )
 
             # Run AutoGen orchestrator
-            async for message_str in run_litrev(
-                topic=topic, num_papers=papers_limit, model=model
+            orchestrator = LitRevOrchestrator(model=model)
+            async for message_str in orchestrator.run_review(
+                topic=topic, num_papers=papers_limit
             ):
                 # Parse message in "source: content" format
                 parsed = self._parse_message(message_str)

@@ -39,12 +39,6 @@ export interface ReviewResponse {
   completed_at: string | null
 }
 
-export interface HealthResponse {
-  status: string
-  version: string
-  timestamp: string
-}
-
 export interface SSEMessageEvent {
   source: string
   content: string

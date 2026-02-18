@@ -172,37 +172,3 @@ class LitRevOrchestrator:
         except Exception as e:
             logger.warning(f"Planner failed, falling back to direct topic: {e}")
             return None
-
-
-# ===============================================================
-# CONVENIENCE FUNCTION
-# ===============================================================
-
-
-async def run_litrev(
-    topic: str,
-    num_papers: int = 5,
-    model: str = "gpt-4o-mini",
-) -> AsyncGenerator[str, None]:
-    """
-    Convenience function to run a literature review.
-
-    Provides backwards-compatible API matching the original
-    implementation while using the new class-based architecture.
-
-    Args:
-        topic: Research topic to review
-        num_papers: Deprecated (fixed to settings.papers_per_review)
-        model: LLM model to use
-
-    Yields:
-        str: Streaming message content
-
-    Example:
-        >>> async for msg in run_litrev("graph neural networks", 5):
-        ...     print(msg)
-    """
-    orchestrator = LitRevOrchestrator(model=model)
-
-    async for msg in orchestrator.run_review(topic, num_papers):
-        yield msg
