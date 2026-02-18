@@ -1,6 +1,7 @@
 /**
  * Custom hook for SSE streaming of review updates.
- * Persists results to sessionStorage so they survive page refreshes.
+ * Persists results to sessionStorage so they survive page refreshes
+ * but are isolated per browser tab.
  */
 
 'use client'
@@ -27,6 +28,7 @@ interface UseReviewStreamResult {
 }
 
 function loadSession(): StoredSession | null {
+  if (typeof window === 'undefined') return null
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY)
     return raw ? JSON.parse(raw) : null
@@ -42,6 +44,7 @@ function saveSession(session: StoredSession) {
 }
 
 export function clearSession() {
+  if (typeof window === 'undefined') return
   sessionStorage.removeItem(STORAGE_KEY)
 }
 
@@ -50,14 +53,25 @@ export function getStoredReviewId(): string | null {
 }
 
 export function useReviewStream(reviewId: string | null): UseReviewStreamResult {
-  const cached = reviewId ? loadSession() : null
-  const isRestoredSession = cached?.reviewId === reviewId && cached?.status === 'completed'
-
-  const [messages, setMessages] = useState<Message[]>(isRestoredSession ? cached!.messages : [])
-  const [status, setStatus] = useState<ReviewStatus>(isRestoredSession ? 'completed' : 'pending')
+  const [messages, setMessages] = useState<Message[]>([])
+  const [status, setStatus] = useState<ReviewStatus>('pending')
   const [isStreaming, setIsStreaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
+  const restoredRef = useRef<string | null>(null)
+
+  // Restore cached session when reviewId changes
+  useEffect(() => {
+    if (!reviewId) return
+    if (restoredRef.current === reviewId) return
+
+    const cached = loadSession()
+    if (cached?.reviewId === reviewId && cached.status === 'completed') {
+      setMessages(cached.messages)
+      setStatus('completed')
+      restoredRef.current = reviewId
+    }
+  }, [reviewId])
 
   // Persist to sessionStorage whenever messages or status change
   useEffect(() => {
