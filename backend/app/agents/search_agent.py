@@ -13,12 +13,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from app.agents.base import BaseAgent
+from app.core.logging_config import get_logger
 from app.tools.arxiv_tool import ArxivSearchTool
 from app.tools.semantic_scholar_tool import SemanticScholarTool
-from app.core.logging_config import get_logger
 
 if TYPE_CHECKING:
-    from autogen_core.tools import FunctionTool
+    pass
 
 logger = get_logger(__name__)
 

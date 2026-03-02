@@ -7,8 +7,9 @@ Pytest configuration and shared fixtures.
 from __future__ import annotations
 
 import os
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import MagicMock, patch
 
 # Set test environment
 os.environ["OPENAI_API_KEY"] = "test-api-key-for-testing"

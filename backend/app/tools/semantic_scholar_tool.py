@@ -10,13 +10,13 @@ venues and provides richer citation context not available on arXiv.
 
 from __future__ import annotations
 
-from typing import Callable, Dict, List
+from collections.abc import Callable
 
 import httpx
 
-from app.tools.base import BaseTool
-from app.core.logging_config import get_logger
 from app.core.exceptions import ToolError
+from app.core.logging_config import get_logger
+from app.tools.base import BaseTool
 
 logger = get_logger(__name__)
 
@@ -72,7 +72,7 @@ class SemanticScholarTool(BaseTool):
         self,
         query: str,
         max_results: int = 5,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """
         Search Semantic Scholar for papers matching the query.
 
@@ -98,7 +98,7 @@ class SemanticScholarTool(BaseTool):
             )
             response.raise_for_status()
 
-            papers: List[Dict] = []
+            papers: list[dict] = []
             for item in response.json().get("data", []):
                 open_access = item.get("openAccessPdf") or {}
                 pdf_url = open_access.get("url") or (
@@ -124,27 +124,27 @@ class SemanticScholarTool(BaseTool):
                 f"Found {len(papers)} papers on Semantic Scholar for: {query}"
             )
             return papers
-
         except httpx.HTTPStatusError as e:
             logger.error(f"Semantic Scholar API error: {e}")
             raise ToolError(
                 f"Semantic Scholar request failed: {e}",
                 tool_name=self.name,
                 details={"query": query},
-            )
+            ) from e
+
         except Exception as e:
             logger.error(f"Semantic Scholar search failed: {e}")
             raise ToolError(
                 f"Failed to search Semantic Scholar: {e}",
                 tool_name=self.name,
                 details={"query": query},
-            )
+            ) from e
 
     # ===============================================================
     # TOOL INTERFACE
     # ===============================================================
 
-    def _get_tool_function(self) -> Callable[..., List[Dict]]:
+    def _get_tool_function(self) -> Callable[..., list[dict]]:
         """
         Get the search function for FunctionTool wrapping.
 

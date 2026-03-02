@@ -6,8 +6,7 @@ Unit tests for team classes.
 
 from __future__ import annotations
 
-import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import patch
 
 from app.teams.litrev_team import LitRevTeam
 

@@ -10,7 +10,7 @@ implementations must follow.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from autogen_agentchat.agents import AssistantAgent
 from autogen_ext.models.openai import OpenAIChatCompletionClient
@@ -50,7 +50,7 @@ class BaseAgent(ABC):
         system_message: str,
         model: str,
         api_key: str,
-        tools: Optional[List["FunctionTool"]] = None,
+        tools: list[FunctionTool] | None = None,
         reflect_on_tool_use: bool = False,
     ) -> None:
         """
@@ -73,8 +73,8 @@ class BaseAgent(ABC):
         self.tools = tools or []
         self.reflect_on_tool_use = reflect_on_tool_use
 
-        self._agent: Optional[AssistantAgent] = None
-        self._llm_client: Optional[OpenAIChatCompletionClient] = None
+        self._agent: AssistantAgent | None = None
+        self._llm_client: OpenAIChatCompletionClient | None = None
 
         logger.debug(f"Initialized {self.__class__.__name__}: {name}")
 

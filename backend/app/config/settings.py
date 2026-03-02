@@ -10,11 +10,10 @@ for the literature review assistant application.
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import List, Literal
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 
 # ===============================================================
 # SETTINGS CLASS
@@ -96,13 +95,13 @@ class BackendSettings(BaseSettings):
     api_port: int = Field(default=8000, validation_alias="API_PORT")
 
     # CORS Configuration
-    cors_origins: List[str] = Field(
+    cors_origins: list[str] = Field(
         default=["http://localhost:3000"],
         validation_alias="CORS_ORIGINS",
     )
     cors_allow_credentials: bool = True
-    cors_allow_methods: List[str] = ["*"]
-    cors_allow_headers: List[str] = ["*"]
+    cors_allow_methods: list[str] = ["*"]
+    cors_allow_headers: list[str] = ["*"]
 
     # Session Configuration
     max_sessions: int = Field(default=1000, validation_alias="MAX_SESSIONS")
@@ -138,7 +137,7 @@ def get_settings() -> Settings:
     return Settings()
 
 
-@lru_cache()
+@lru_cache
 def get_backend_settings() -> BackendSettings:
     """Get cached backend settings instance"""
     return BackendSettings()

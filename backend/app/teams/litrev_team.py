@@ -9,7 +9,7 @@ workflow for producing and refining literature reviews.
 
 from __future__ import annotations
 
-from typing import AsyncGenerator, List
+from collections.abc import AsyncGenerator
 
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.conditions import MaxMessageTermination, TextMentionTermination
@@ -80,7 +80,7 @@ class LitRevTeam(BaseTeam):
     # IMPLEMENTATION
     # ===============================================================
 
-    def _get_participants(self) -> List[AssistantAgent]:
+    def _get_participants(self) -> list[AssistantAgent]:
         """
         Get the list of agent participants.
 
@@ -148,4 +148,4 @@ class LitRevTeam(BaseTeam):
                 f"Failed to execute literature review: {e}",
                 team_name=self.name,
                 details={"task": task},
-            )
+            ) from e

@@ -9,8 +9,7 @@ for different failure modes across the application.
 
 from __future__ import annotations
 
-from typing import Any, Optional
-
+from typing import Any
 
 # ===============================================================
 # BASE EXCEPTION
@@ -29,7 +28,7 @@ class LitRevError(Exception):
     def __init__(
         self,
         message: str,
-        details: Optional[dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         self.message = message
         self.details = details or {}
@@ -59,8 +58,8 @@ class ConfigurationError(LitRevError):
     def __init__(
         self,
         message: str,
-        config_key: Optional[str] = None,
-        details: Optional[dict[str, Any]] = None,
+        config_key: str | None = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         details = details or {}
         if config_key:
@@ -81,8 +80,8 @@ class AgentError(LitRevError):
     def __init__(
         self,
         message: str,
-        agent_name: Optional[str] = None,
-        details: Optional[dict[str, Any]] = None,
+        agent_name: str | None = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         details = details or {}
         if agent_name:
@@ -103,8 +102,8 @@ class ToolError(LitRevError):
     def __init__(
         self,
         message: str,
-        tool_name: Optional[str] = None,
-        details: Optional[dict[str, Any]] = None,
+        tool_name: str | None = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         details = details or {}
         if tool_name:
@@ -125,8 +124,8 @@ class TeamError(LitRevError):
     def __init__(
         self,
         message: str,
-        team_name: Optional[str] = None,
-        details: Optional[dict[str, Any]] = None,
+        team_name: str | None = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         details = details or {}
         if team_name:

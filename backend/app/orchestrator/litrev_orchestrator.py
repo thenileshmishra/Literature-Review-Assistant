@@ -9,17 +9,17 @@ coordinating the team, and managing the review workflow.
 
 from __future__ import annotations
 
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 from autogen_agentchat.conditions import MaxMessageTermination
 from autogen_agentchat.messages import TextMessage
 from autogen_agentchat.teams import RoundRobinGroupChat
 
 from app.agents.planner_agent import PlannerAgent
-from app.teams.litrev_team import LitRevTeam
 from app.config.settings import Settings, get_settings
-from app.core.logging_config import get_logger, setup_logging
 from app.core.exceptions import ConfigurationError
+from app.core.logging_config import get_logger, setup_logging
+from app.teams.litrev_team import LitRevTeam
 
 logger = get_logger(__name__)
 

@@ -5,10 +5,10 @@ Application configuration management.
 """
 
 from app.config.settings import (
-    Settings,
-    BackendSettings,
-    get_settings,
-    get_backend_settings,
+                                 BackendSettings,
+                                 Settings,
+                                 get_backend_settings,
+                                 get_settings,
 )
 
 __all__ = [

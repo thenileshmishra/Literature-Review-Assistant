@@ -10,7 +10,8 @@ multiple agents working together.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import AsyncGenerator, List, TYPE_CHECKING
+from collections.abc import AsyncGenerator
+from typing import TYPE_CHECKING
 
 from app.core.logging_config import get_logger
 
@@ -60,7 +61,7 @@ class BaseTeam(ABC):
     # ===============================================================
 
     @abstractmethod
-    def _get_participants(self) -> List["AssistantAgent"]:
+    def _get_participants(self) -> list[AssistantAgent]:
         """
         Get the list of agent participants for this team.
 

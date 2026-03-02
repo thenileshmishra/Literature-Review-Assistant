@@ -6,8 +6,7 @@ Unit tests for agent classes.
 
 from __future__ import annotations
 
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from app.agents.search_agent import SearchAgent
 from app.agents.summarizer_agent import SummarizerAgent

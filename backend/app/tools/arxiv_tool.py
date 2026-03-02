@@ -9,13 +9,13 @@ result formatting suitable for literature review tasks.
 
 from __future__ import annotations
 
-from typing import Callable, Dict, List
+from collections.abc import Callable
 
 import arxiv
 
-from app.tools.base import BaseTool
-from app.core.logging_config import get_logger
 from app.core.exceptions import ToolError
+from app.core.logging_config import get_logger
+from app.tools.base import BaseTool
 
 logger = get_logger(__name__)
 
@@ -68,7 +68,7 @@ class ArxivSearchTool(BaseTool):
         self,
         query: str,
         max_results: int = 5,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """
         Search arXiv for papers matching the query.
 
@@ -92,7 +92,7 @@ class ArxivSearchTool(BaseTool):
                 sort_by=arxiv.SortCriterion.Relevance,
             )
 
-            papers: List[Dict] = []
+            papers: list[dict] = []
             for result in self._client.results(search):
                 papers.append(
                     {
@@ -113,13 +113,13 @@ class ArxivSearchTool(BaseTool):
                 f"Failed to search arXiv: {e}",
                 tool_name=self.name,
                 details={"query": query, "max_results": capped_results},
-            )
+            ) from e
 
     # ===============================================================
     # TOOL INTERFACE
     # ===============================================================
 
-    def _get_tool_function(self) -> Callable[..., List[Dict]]:
+    def _get_tool_function(self) -> Callable[..., list[dict]]:
         """
         Get the search function for FunctionTool wrapping.
 

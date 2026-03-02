@@ -1,14 +1,14 @@
 """Session management for review tracking"""
 
-from typing import Dict, Optional
-from datetime import datetime
-import uuid
 import logging
+import uuid
+from datetime import datetime
+
 from app.models.responses import (
-    ReviewResponse,
-    ReviewStatus,
     MessageResponse,
     PaperResponse,
+    ReviewResponse,
+    ReviewStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ class SessionManager:
     """Manages in-memory sessions for literature reviews"""
 
     def __init__(self, max_sessions: int = 1000):
-        self._sessions: Dict[str, ReviewResponse] = {}
+        self._sessions: dict[str, ReviewResponse] = {}
         self._max_sessions = max_sessions
         logger.info(f"SessionManager initialized with max_sessions={max_sessions}")
 
@@ -53,7 +53,7 @@ class SessionManager:
         logger.info(f"Created session {session_id} for topic: {topic}")
         return review
 
-    def get_session(self, session_id: str) -> Optional[ReviewResponse]:
+    def get_session(self, session_id: str) -> ReviewResponse | None:
         """Get a review session by ID"""
         return self._sessions.get(session_id)
 
@@ -132,7 +132,7 @@ class SessionManager:
 
 
 # Singleton instance
-_session_manager: Optional[SessionManager] = None
+_session_manager: SessionManager | None = None
 
 
 def get_session_manager() -> SessionManager:
