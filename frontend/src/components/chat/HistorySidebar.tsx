@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState, useRef, useEffect } from 'react'
-import { MessageSquarePlus, PanelLeft, PanelRight, Pencil, Check, X } from 'lucide-react'
+import { MessageSquarePlus, PanelLeft, PanelRight, Pencil, Check, X, Trash2 } from 'lucide-react'
 import type { ChatHistoryItem } from '@/lib/types/api'
 
 interface HistorySidebarProps {
@@ -10,6 +10,7 @@ interface HistorySidebarProps {
   onNewChat: () => void
   onSelectChat: (chatId: string) => void
   onRenameChat: (chatId: string, newTitle: string) => void
+  onDeleteChat: (chatId: string) => void
   collapsed?: boolean
   onToggleCollapse: () => void
 }
@@ -20,6 +21,7 @@ export function HistorySidebar({
   onNewChat,
   onSelectChat,
   onRenameChat,
+  onDeleteChat,
   collapsed = false,
   onToggleCollapse,
 }: HistorySidebarProps) {
@@ -81,15 +83,17 @@ export function HistorySidebar({
           {collapsed ? <PanelRight className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
         </button>
 
-        <button
-          type="button"
-          onClick={onNewChat}
-          className="sidebar-new-chat-btn"
-          aria-label="New chat"
-          title="New chat"
-        >
-          <MessageSquarePlus className="h-4 w-4" />
-        </button>
+        {!collapsed && (
+          <button
+            type="button"
+            onClick={onNewChat}
+            className="sidebar-new-chat-btn"
+            aria-label="New chat"
+            title="New chat"
+          >
+            <MessageSquarePlus className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* Chat list */}
@@ -150,18 +154,33 @@ export function HistorySidebar({
                     {chat.title || 'Untitled chat'}
                   </span>
                   {isActive && (
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      className="flex-shrink-0 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-accent transition-opacity"
-                      onClick={(e) => startRename(chat, e)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') startRename(chat, e as unknown as React.MouseEvent)
-                      }}
-                      aria-label="Rename chat"
-                      title="Rename"
-                    >
-                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        className="flex-shrink-0 p-0.5 rounded hover:bg-accent"
+                        onClick={(e) => startRename(chat, e)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') startRename(chat, e as unknown as React.MouseEvent)
+                        }}
+                        aria-label="Rename chat"
+                        title="Rename"
+                      >
+                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                      </span>
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        className="flex-shrink-0 p-0.5 rounded hover:bg-destructive/20"
+                        onClick={(e) => { e.stopPropagation(); onDeleteChat(chat.id) }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') { e.stopPropagation(); onDeleteChat(chat.id) }
+                        }}
+                        aria-label="Delete chat"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                      </span>
                     </span>
                   )}
                 </div>

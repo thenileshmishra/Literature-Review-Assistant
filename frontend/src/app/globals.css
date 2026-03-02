@@ -492,6 +492,84 @@
   background: hsl(var(--foreground)) !important;
 }
 
+/* ══════════════════════════════════════════════
+   THINKING STEPS (collapsible agent messages)
+   ══════════════════════════════════════════════ */
+.thinking-step {
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  overflow: hidden;
+  background: hsl(var(--card));
+}
+
+.thinking-step-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: hsl(var(--foreground));
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.15s ease;
+}
+
+.thinking-step-header:hover {
+  background: hsl(var(--muted));
+}
+
+.thinking-step-body {
+  padding: 0 14px 12px;
+  color: hsl(var(--foreground));
+}
+
+/* ══════════════════════════════════════════════
+   STAGE STEPPER (progress indicator)
+   ══════════════════════════════════════════════ */
+.stage-stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0 4px;
+  flex-wrap: wrap;
+}
+
+.stage-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.stage-step.stage-done {
+  background: hsl(142 71% 45% / 0.15);
+  color: hsl(142 71% 35%);
+}
+
+.stage-step.stage-active {
+  background: hsl(217 91% 60% / 0.15);
+  color: hsl(217 91% 50%);
+}
+
+.stage-dot {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stage-label {
+  font-weight: 500;
+}
+
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .history-sider.ant-layout-sider {

@@ -5,18 +5,10 @@ import dynamic from 'next/dynamic'
 import { Card, ConfigProvider, Layout, Alert, Button, Skeleton, Space, theme as antdTheme } from 'antd'
 import { MessageSquarePlus, Moon, Sun } from 'lucide-react'
 import { SearchForm } from '@/components/search/SearchForm'
-import type { ChatHistoryItem, ChatSession, CreateReviewRequest } from '@/lib/types/api'
-import { createReview } from '@/lib/api/reviews'
+import type { ChatHistoryItem, ChatSession, CreateReviewRequest, ReviewResponse } from '@/lib/types/api'
+import { createReview, listReviews, deleteReview } from '@/lib/api/reviews'
 import { useReviewStream } from '@/lib/hooks/useReviewStream'
 import { HistorySidebar } from '@/components/chat/HistorySidebar'
-import {
-  createChat,
-  getActiveChatId,
-  getAllChats,
-  getChat,
-  setActiveChatId,
-  updateChat,
-} from '@/lib/storage/chatHistory'
 
 const { Content, Sider } = Layout
 const { defaultAlgorithm, darkAlgorithm } = antdTheme
@@ -32,67 +24,86 @@ const PaperList = dynamic(
   { loading: () => <Skeleton active paragraph={{ rows: 4 }} /> }
 )
 
+/** Convert a backend ReviewResponse into the shape our components expect. */
+function reviewToChat(r: ReviewResponse): ChatSession {
+  return {
+    id: r.id,
+    title: r.request?.topic?.slice(0, 50) || 'Untitled',
+    createdAt: r.created_at,
+    updatedAt: r.completed_at || r.created_at,
+    status: r.status,
+    messageCount: r.messages.length,
+    messages: r.messages,
+    reviewId: r.id,
+  }
+}
+
 export default function Home() {
   const [chats, setChats] = useState<ChatSession[]>([])
-  const [activeChatId, setActiveChatIdState] = useState<string | null>(null)
+  const [activeChatId, setActiveChatId] = useState<string | null>(null)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [streamReviewId, setStreamReviewId] = useState<string | null>(null)
-  const [streamChatId, setStreamChatId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [, setIsLoadingChats] = useState(true)
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
     if (typeof document === 'undefined') return 'dark'
     return document.documentElement.classList.contains('light') ? 'light' : 'dark'
   })
 
+  // ── Stream hook: update the active chat in-place as SSE events arrive ──
   const { status: streamStatus, isStreaming, error: streamError, startStream } = useReviewStream(streamReviewId, {
     onUpdate: ({ messages, status }) => {
-      if (!streamChatId) return
-      const updated = updateChat(streamChatId, { messages, status })
-      if (!updated) return
-      setChats(getAllChats())
+      if (!streamReviewId) return
+      setChats((prev) =>
+        prev.map((c) =>
+          c.id === streamReviewId ? { ...c, messages, status, messageCount: messages.length } : c
+        )
+      )
     },
   })
 
   const activeChat = useMemo(
-    () => (activeChatId ? chats.find((chat) => chat.id === activeChatId) ?? null : null),
+    () => (activeChatId ? chats.find((c) => c.id === activeChatId) ?? null : null),
     [activeChatId, chats]
   )
 
-  // Only show chats that have actual content (messages or a reviewId)
   const sidebarItems: ChatHistoryItem[] = useMemo(
-    () => chats
-      .filter((chat) => chat.messages.length > 0 || chat.reviewId || chat.status !== 'pending')
-      .map(({ id, title, createdAt, updatedAt, status, messageCount }) => ({
-        id, title, createdAt, updatedAt, status, messageCount,
-      })),
+    () => chats.map(({ id, title, createdAt, updatedAt, status, messageCount }) => ({
+      id, title, createdAt, updatedAt, status, messageCount,
+    })),
     [chats]
   )
 
   const displayMessages = activeChat?.messages ?? []
   const displayStatus = activeChat?.status ?? 'pending'
   const displayReviewId = activeChat?.reviewId ?? null
-  const isActiveStreaming = isStreaming && streamChatId === activeChatId
+  const isActiveStreaming = isStreaming && streamReviewId === activeChatId
 
+  // ── Load reviews from backend on mount ──
   useEffect(() => {
-    const allChats = getAllChats()
-    if (allChats.length === 0) {
-      setChats([])
-      setActiveChatIdState(null)
-      setActiveChatId(null)
-      return
+    let cancelled = false
+    async function load() {
+      try {
+        const reviews = await listReviews(50)
+        if (cancelled) return
+        const mapped = reviews.map(reviewToChat)
+        setChats(mapped)
+        if (mapped.length > 0) {
+          setActiveChatId(mapped[0].id)
+        }
+      } catch (err) {
+        console.error('Failed to load reviews from backend:', err)
+        // Not fatal — user can still create new reviews
+      } finally {
+        if (!cancelled) setIsLoadingChats(false)
+      }
     }
-
-    setChats(allChats)
-
-    const storedActive = getActiveChatId()
-    const resolvedActive =
-      (storedActive && allChats.some((chat) => chat.id === storedActive) ? storedActive : allChats[0].id)
-
-    setActiveChatIdState(resolvedActive)
-    setActiveChatId(resolvedActive)
+    load()
+    return () => { cancelled = true }
   }, [])
 
+  // ── Theme persistence ──
   useEffect(() => {
     const root = document.documentElement
     root.classList.toggle('dark', themeMode === 'dark')
@@ -100,29 +111,17 @@ export default function Home() {
     localStorage.setItem(THEME_KEY, themeMode)
   }, [themeMode])
 
+  // ── Submit a new review ──
   const handleSubmit = async (request: CreateReviewRequest) => {
     try {
       setIsCreating(true)
       setError(null)
 
-      // Always create a new chat on submit
-      const trimmedTitle = request.topic.trim().slice(0, 50) || 'New chat'
-      const nextChat = createChat({ title: trimmedTitle })
-      const targetChatId = nextChat.id
-      setActiveChatIdState(nextChat.id)
-      setActiveChatId(nextChat.id)
-      setChats(getAllChats())
-
       const review = await createReview(request)
+      const newChat = reviewToChat(review)
+      setChats((prev) => [newChat, ...prev])
+      setActiveChatId(newChat.id)
       setStreamReviewId(review.id)
-      setStreamChatId(targetChatId)
-
-      updateChat(targetChatId, {
-        reviewId: review.id,
-        status: 'in_progress',
-      })
-      setChats(getAllChats())
-
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to create review')
       console.error('Error creating review:', err)
@@ -131,38 +130,48 @@ export default function Home() {
     }
   }
 
+  // ── Start stream when reviewId changes ──
   useEffect(() => {
     if (!streamReviewId) return
     startStream()
   }, [streamReviewId, startStream])
 
+  // ── Clear stream state on completion ──
   useEffect(() => {
-    if (!streamChatId) return
+    if (!streamReviewId) return
     if (streamStatus !== 'completed' && streamStatus !== 'failed') return
     setStreamReviewId(null)
-    setStreamChatId(null)
-  }, [streamChatId, streamStatus])
+  }, [streamReviewId, streamStatus])
 
-  // "New chat" just resets to the composer view (no storage entry created)
+  // ── New chat = just show composer ──
   const handleNewChat = useCallback(() => {
-    setActiveChatIdState(null)
     setActiveChatId(null)
     setError(null)
   }, [])
 
   const handleSelectChat = useCallback((chatId: string) => {
-    const chat = getChat(chatId)
-    if (!chat) return
-    setActiveChatIdState(chat.id)
-    setActiveChatId(chat.id)
+    setActiveChatId(chatId)
     setError(null)
   }, [])
 
+  // ── Delete a review (backend + local state) ──
+  const handleDeleteChat = useCallback(async (chatId: string) => {
+    try {
+      await deleteReview(chatId)
+    } catch {
+      // Session might already be expired on backend, still remove locally
+    }
+    setChats((prev) => prev.filter((c) => c.id !== chatId))
+    if (activeChatId === chatId) {
+      setActiveChatId(null)
+    }
+  }, [activeChatId])
+
+  // ── Rename (local only — backend has no rename endpoint) ──
   const handleRenameChat = useCallback((chatId: string, newTitle: string) => {
     const trimmed = newTitle.trim()
     if (!trimmed) return
-    updateChat(chatId, { title: trimmed })
-    setChats(getAllChats())
+    setChats((prev) => prev.map((c) => c.id === chatId ? { ...c, title: trimmed } : c))
   }, [])
 
   const shouldShowSearchForm =
@@ -183,7 +192,6 @@ export default function Home() {
       }}
     >
       <Layout className="app-shell">
-        {/* ── Sidebar ── */}
         <Sider
           width={260}
           collapsed={isSidebarCollapsed}
@@ -199,13 +207,13 @@ export default function Home() {
               onNewChat={handleNewChat}
               onSelectChat={handleSelectChat}
               onRenameChat={handleRenameChat}
+              onDeleteChat={handleDeleteChat}
               collapsed={isSidebarCollapsed}
               onToggleCollapse={() => setIsSidebarCollapsed((v) => !v)}
             />
           </div>
         </Sider>
 
-        {/* ── Main panel ── */}
         <Layout>
           <div className="top-bar">
             <div className="text-lg font-semibold text-foreground">
