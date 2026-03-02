@@ -9,10 +9,13 @@ interface SearchFormProps {
   isLoading?: boolean
 }
 
+const COOLDOWN_MS = 10_000 // 10s cooldown between submissions
+
 export function SearchForm({ onSubmit, isLoading = false }: SearchFormProps) {
   const [value, setValue] = useState('')
   const [error, setError] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const lastSubmitRef = useRef<number>(0)
 
   useEffect(() => {
     textareaRef.current?.focus()
@@ -33,6 +36,16 @@ export function SearchForm({ onSubmit, isLoading = false }: SearchFormProps) {
       setError('Topic must be at least 3 characters long')
       return
     }
+
+    // Frontend cooldown
+    const now = Date.now()
+    const elapsed = now - lastSubmitRef.current
+    if (elapsed < COOLDOWN_MS) {
+      const wait = Math.ceil((COOLDOWN_MS - elapsed) / 1000)
+      setError(`Please wait ${wait}s before submitting again.`)
+      return
+    }
+    lastSubmitRef.current = now
 
     onSubmit({ topic: trimmed })
   }
@@ -59,7 +72,7 @@ export function SearchForm({ onSubmit, isLoading = false }: SearchFormProps) {
             autoResize()
           }}
           onKeyDown={handleKeyDown}
-          placeholder="Ask anything"
+          placeholder="Enter an AI/ML research topic..."
           disabled={isLoading}
           rows={1}
         />

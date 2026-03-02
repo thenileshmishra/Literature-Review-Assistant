@@ -4,13 +4,20 @@ Wraps AutoGen multi-agent system with REST API and SSE streaming
 """
 
 import logging
+import time
+from collections import defaultdict
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.routes import health, reviews, stream
 from app.config.settings import get_backend_settings
+
+# ── Simple in-memory rate limiter ──
+_RATE_WINDOW = 60  # seconds
+_RATE_LIMIT = 5  # max review creations per window per IP
+_rate_store: dict[str, list[float]] = defaultdict(list)
 
 # Configure logging
 logging.basicConfig(
@@ -37,6 +44,26 @@ app.add_middleware(
     allow_methods=settings.cors_allow_methods,
     allow_headers=settings.cors_allow_headers,
 )
+
+# ── Rate-limit middleware (only on POST /api/v1/reviews) ──
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    if request.method == "POST" and request.url.path.rstrip("/") == "/api/v1/reviews":
+        client_ip = request.client.host if request.client else "unknown"
+        now = time.time()
+        # Prune old timestamps
+        _rate_store[client_ip] = [t for t in _rate_store[client_ip] if now - t < _RATE_WINDOW]
+        if len(_rate_store[client_ip]) >= _RATE_LIMIT:
+            return JSONResponse(
+                status_code=429,
+                content={
+                    "detail": f"Too many requests. Please wait before creating another review. "
+                    f"Limit: {_RATE_LIMIT} reviews per {_RATE_WINDOW}s."
+                },
+            )
+        _rate_store[client_ip].append(now)
+    return await call_next(request)
+
 
 # Include routers
 app.include_router(health.router, tags=["Health"])
