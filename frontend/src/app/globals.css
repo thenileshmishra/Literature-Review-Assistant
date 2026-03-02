@@ -53,8 +53,16 @@
   * {
     @apply border-border;
   }
+  html,
+  body {
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+  }
+
   body {
     @apply bg-background text-foreground;
+    min-height: 100vh;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
@@ -136,9 +144,15 @@ html.dark body {
   position: sticky;
   top: 0;
   z-index: 10;
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid hsl(var(--border));
+  background: rgba(255, 255, 255, 0.7);
   background: color-mix(in srgb, hsl(var(--background)) 70%, transparent);
+}
+
+html.dark .app-header {
+  background: rgba(15, 23, 42, 0.7);
 }
 
 .app-header-inner {
@@ -209,11 +223,13 @@ html.dark body {
   padding: 12px;
   border-radius: 14px;
   border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
   background: color-mix(in srgb, hsl(var(--card)) 85%, transparent);
 }
 
 .message-row-error {
   border-color: hsl(var(--destructive));
+  background: hsl(var(--card));
   background: color-mix(in srgb, hsl(var(--destructive)) 12%, hsl(var(--card)));
 }
 

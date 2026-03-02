@@ -1,11 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { Card, ConfigProvider, Layout, Alert, Button, Skeleton, Space, theme as antdTheme } from 'antd'
 import { Header } from '@/components/layout/Header'
 import { SearchForm } from '@/components/search/SearchForm'
-import { MessageDisplay } from '@/components/chat/MessageDisplay'
-import { PaperList } from '@/components/papers/PaperList'
 import type { CreateReviewRequest } from '@/lib/types/api'
 import { createReview } from '@/lib/api/reviews'
 import { useReviewStream, clearSession, getStoredReviewId } from '@/lib/hooks/useReviewStream'
@@ -14,12 +13,27 @@ const { Content } = Layout
 const { defaultAlgorithm, darkAlgorithm } = antdTheme
 const THEME_KEY = 'app-theme'
 
+const MessageDisplay = dynamic(
+  () => import('@/components/chat/MessageDisplay').then((module) => module.MessageDisplay),
+  { loading: () => <Skeleton active paragraph={{ rows: 3 }} /> }
+)
+
+const PaperList = dynamic(
+  () => import('@/components/papers/PaperList').then((module) => module.PaperList),
+  { loading: () => <Skeleton active paragraph={{ rows: 4 }} /> }
+)
+
 export default function Home() {
   const [reviewId, setReviewId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [themeMode, setThemeMode] = useState<'light' | 'dark'>('dark')
-  const [themeInitialized, setThemeInitialized] = useState(false)
+  const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
+    if (typeof document === 'undefined') {
+      return 'dark'
+    }
+
+    return document.documentElement.classList.contains('light') ? 'light' : 'dark'
+  })
 
   const { messages, status, isStreaming, error: streamError, startStream } = useReviewStream(reviewId)
 
@@ -30,29 +44,12 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    const saved = localStorage.getItem(THEME_KEY)
-    if (saved === 'light' || saved === 'dark') {
-      setThemeMode(saved)
-      setThemeInitialized(true)
-      return
-    }
-
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-    setThemeMode(prefersDark ? 'dark' : 'light')
-    setThemeInitialized(true)
-  }, [])
-
-  useEffect(() => {
-    if (!themeInitialized) return
     const root = document.documentElement
     root.classList.toggle('dark', themeMode === 'dark')
     root.classList.toggle('light', themeMode === 'light')
 
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(THEME_KEY, themeMode)
-    }
-  }, [themeMode, themeInitialized])
+    localStorage.setItem(THEME_KEY, themeMode)
+  }, [themeMode])
 
   const handleSubmit = async (request: CreateReviewRequest) => {
     try {
