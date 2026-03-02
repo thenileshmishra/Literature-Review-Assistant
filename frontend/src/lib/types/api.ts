@@ -13,6 +13,20 @@ export interface Message {
   message_type: MessageType
 }
 
+export interface ChatHistoryItem {
+  id: string
+  title: string
+  createdAt: string
+  updatedAt: string
+  status: ReviewStatus
+  messageCount: number
+}
+
+export interface ChatSession extends ChatHistoryItem {
+  messages: Message[]
+  reviewId?: string
+}
+
 export interface Paper {
   title: string
   authors: string[]

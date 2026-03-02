@@ -1,7 +1,6 @@
 /**
  * Custom hook for SSE streaming of review updates.
- * Persists results to sessionStorage so they survive page refreshes
- * but are isolated per browser tab.
+ * Streaming state is managed locally and can be persisted by parent callbacks.
  */
 
 'use client'
@@ -10,12 +9,14 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { API_URL } from '../api/client'
 import type { Message, ReviewStatus, SSEEvent } from '../types/api'
 
-const STORAGE_KEY = 'litrev-session'
-
-interface StoredSession {
+interface StreamUpdatePayload {
   reviewId: string
   messages: Message[]
   status: ReviewStatus
+}
+
+interface UseReviewStreamOptions {
+  onUpdate?: (payload: StreamUpdatePayload) => void
 }
 
 interface UseReviewStreamResult {
@@ -27,57 +28,20 @@ interface UseReviewStreamResult {
   stopStream: () => void
 }
 
-function loadSession(): StoredSession | null {
-  if (typeof window === 'undefined') return null
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch {
-    return null
-  }
-}
-
-function saveSession(session: StoredSession) {
-  try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session))
-  } catch { /* quota exceeded — ignore */ }
-}
-
-export function clearSession() {
-  if (typeof window === 'undefined') return
-  sessionStorage.removeItem(STORAGE_KEY)
-}
-
-export function getStoredReviewId(): string | null {
-  return loadSession()?.reviewId ?? null
-}
-
-export function useReviewStream(reviewId: string | null): UseReviewStreamResult {
+export function useReviewStream(
+  reviewId: string | null,
+  options?: UseReviewStreamOptions
+): UseReviewStreamResult {
   const [messages, setMessages] = useState<Message[]>([])
   const [status, setStatus] = useState<ReviewStatus>('pending')
   const [isStreaming, setIsStreaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
-  const restoredRef = useRef<string | null>(null)
 
-  // Restore cached session when reviewId changes
   useEffect(() => {
-    if (!reviewId) return
-    if (restoredRef.current === reviewId) return
-
-    const cached = loadSession()
-    if (cached?.reviewId === reviewId && cached.status === 'completed') {
-      setMessages(cached.messages)
-      setStatus('completed')
-      restoredRef.current = reviewId
-    }
-  }, [reviewId])
-
-  // Persist to sessionStorage whenever messages or status change
-  useEffect(() => {
-    if (!reviewId || messages.length === 0) return
-    saveSession({ reviewId, messages, status })
-  }, [reviewId, messages, status])
+    if (!reviewId || !options?.onUpdate) return
+    options.onUpdate({ reviewId, messages, status })
+  }, [reviewId, messages, options, status])
 
   const stopStream = useCallback(() => {
     if (eventSourceRef.current) {
@@ -89,10 +53,6 @@ export function useReviewStream(reviewId: string | null): UseReviewStreamResult 
 
   const startStream = useCallback(() => {
     if (!reviewId) return
-
-    // Don't re-stream a completed session restored from storage
-    const stored = loadSession()
-    if (stored?.reviewId === reviewId && stored.status === 'completed') return
 
     stopStream()
 
@@ -148,6 +108,15 @@ export function useReviewStream(reviewId: string | null): UseReviewStreamResult 
         setIsStreaming(false)
         stopStream()
       }
+    }
+  }, [reviewId, stopStream])
+
+  useEffect(() => {
+    if (!reviewId) {
+      stopStream()
+      setMessages([])
+      setStatus('pending')
+      setError(null)
     }
   }, [reviewId, stopStream])
 
