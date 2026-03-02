@@ -4,67 +4,73 @@
 
 @layer base {
   :root {
-    /* Light Theme – Neutral Gray */
+    /* Light Theme – ChatGPT style */
     --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --foreground: 0 0% 13%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 0 0% 13%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover-foreground: 0 0% 13%;
 
-    --primary: 142 71% 45%; /* ChatGPT green */
+    --primary: 0 0% 13%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 13%;
 
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 13%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 142 71% 45%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 13%;
 
     --radius: 0.5rem;
+
+    --sidebar-bg: 0 0% 97%;
+    --composer-bg: 0 0% 95%;
   }
 
   .dark {
-    /* Dark Theme – Neutral Slate */
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    /* Dark Theme – ChatGPT style */
+    --background: 220 7% 13%;
+    --foreground: 0 0% 93%;
 
-    --card: 240 10% 6%;
-    --card-foreground: 0 0% 98%;
+    --card: 220 7% 16%;
+    --card-foreground: 0 0% 93%;
 
-    --popover: 240 10% 6%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 220 7% 16%;
+    --popover-foreground: 0 0% 93%;
 
-    --primary: 142 71% 45%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 220 7% 13%;
 
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 220 7% 18%;
+    --secondary-foreground: 0 0% 93%;
 
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 220 7% 18%;
+    --muted-foreground: 0 0% 60%;
 
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 220 7% 18%;
+    --accent-foreground: 0 0% 93%;
 
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 142 71% 45%;
+    --border: 220 7% 22%;
+    --input: 220 7% 22%;
+    --ring: 0 0% 100%;
+
+    --sidebar-bg: 220 7% 10%;
+    --composer-bg: 220 7% 19%;
   }
 }
 
@@ -77,6 +83,7 @@
     width: 100%;
     min-height: 100%;
     margin: 0;
+    overflow: hidden;
   }
 
   body {
@@ -86,18 +93,9 @@
   }
 }
 
-/* Custom gradient backgrounds */
-html.light body {
-  background: hsl(var(--background));
-}
-
-html.dark body {
-  background: hsl(var(--background));
-}
-
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -129,145 +127,215 @@ html.dark body {
   animation: slideIn 0.3s ease-out;
 }
 
-/* Pulse animation for loading */
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .animate-pulse-slow {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* App shell */
-.app-shell {
-  background: transparent;
+/* ══════════════════════════════════════════════
+   LAYOUT – full viewport, sidebar + main
+   ══════════════════════════════════════════════ */
+
+/* The outermost Ant Layout */
+.app-shell,
+.app-shell > .ant-layout {
+  min-height: 100vh !important;
+  height: 100vh !important;
+  background: hsl(var(--background)) !important;
+  overflow: hidden !important;
 }
 
-.app-content {
-  padding: 32px 16px 64px;
-}
-
-.app-main-layout {
-  min-height: calc(100vh - 90px);
-  background: transparent;
-}
-
+/* ── Sidebar ── */
 .history-sider.ant-layout-sider {
-  background: hsl(var(--background));
-  border-right: 1px solid hsl(var(--border));
+  background: hsl(var(--sidebar-bg)) !important;
+  border-right: none !important;
+  height: 100vh !important;
+  overflow: hidden !important;
 }
 
 .history-sider-inner {
   height: 100%;
-  padding: 20px 12px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Sidebar buttons ── */
+.sidebar-new-chat-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid hsl(var(--border));
+  background: transparent;
+  color: hsl(var(--foreground));
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sidebar-new-chat-btn:hover {
+  background: hsl(var(--muted));
+}
+
+/* ── Sidebar chat items ── */
+.history-chat-item {
+  width: 100%;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: hsl(var(--foreground));
+  padding: 8px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.history-chat-item:hover {
+  background: hsl(var(--muted));
+}
+
+.history-chat-item-active {
+  background: hsl(var(--muted));
+}
+
+/* Rename input inside sidebar items */
+.rename-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: hsl(var(--foreground));
+  font-size: 14px;
+  line-height: 1.4;
+  padding: 0;
+  font-family: inherit;
+}
+
+/* ── Main content area ── */
+.app-content {
+  padding: 0 !important;
+  background: hsl(var(--background)) !important;
+  overflow-y: auto !important;
+  height: calc(100vh - 48px) !important;
 }
 
 .content-wrap {
-  max-width: 1040px;
+  max-width: 48rem;
   margin: 0 auto;
+  width: 100%;
 }
 
-.app-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid hsl(var(--border));
-  background: hsl(var(--background) / 0.8);
-}
-
-html.dark .app-header {
-  background: hsl(var(--background) / 0.7);
-}
-
-.app-header-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 18px 16px;
+/* ── Top bar ── */
+.top-bar {
+  height: 48px;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  padding: 0 16px;
+  background: hsl(var(--background));
+  flex-shrink: 0;
 }
 
-.app-logo {
-  height: 40px;
-  width: 40px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, #1feb7e, #09e347);
-  color: #fff;
-}
-
-.app-header-controls {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.control-group {
+/* ══════════════════════════════════════════════
+   COMPOSER (ChatGPT-style search bar)
+   ══════════════════════════════════════════════ */
+.composer-container {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 48px);
+  padding: 0 16px;
 }
 
-.search-card {
-  border-radius: 20px;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-}
-
-.search-card .ant-card-body {
-  background: hsl(var(--card));
-}
-
-.search-card .ant-input,
-.search-card .ant-input-affix-wrapper {
-  background: hsl(var(--background));
+.composer-heading {
+  font-size: 1.75rem;
+  font-weight: 600;
   color: hsl(var(--foreground));
-  border-color: hsl(var(--border));
+  margin-bottom: 24px;
+  text-align: center;
 }
 
-.search-card .ant-input::placeholder,
-.search-card .ant-input-affix-wrapper input::placeholder {
-  color: hsl(var(--muted-foreground));
+.composer-box {
+  width: 100%;
+  max-width: 48rem;
+  background: hsl(var(--composer-bg));
+  border-radius: 24px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  border: none;
+  box-shadow: none;
+  transition: background-color 0.2s ease;
 }
 
-.search-card .ant-input-affix-wrapper .ant-input-prefix {
-  color: hsl(var(--muted-foreground));
+.composer-box:focus-within {
+  box-shadow: 0 0 0 1px hsl(var(--border));
 }
 
-.search-card .ant-typography,
-.search-card .ant-typography-secondary {
-  color: hsl(var(--foreground));
+.composer-box textarea,
+.composer-box input {
+  flex: 1;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  color: hsl(var(--foreground)) !important;
+  font-size: 16px;
+  line-height: 1.5;
+  resize: none;
+  padding: 4px 0;
+  box-shadow: none !important;
+  min-height: 24px;
+  max-height: 200px;
+  font-family: inherit;
 }
 
-.search-card .ant-typography-secondary {
+.composer-box textarea::placeholder,
+.composer-box input::placeholder {
   color: hsl(var(--muted-foreground)) !important;
 }
 
-.hint-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+.composer-submit-btn {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: none !important;
+  background: hsl(var(--foreground)) !important;
+  color: hsl(var(--background)) !important;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0 !important;
+  transition: opacity 0.15s ease;
 }
 
-.hint-chip {
-  border-radius: 999px !important;
-  background: hsl(var(--muted));
-  color: hsl(var(--foreground));
+.composer-submit-btn:hover {
+  opacity: 0.8;
 }
 
+.composer-submit-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ══════════════════════════════════════════════
+   CHAT VIEW
+   ══════════════════════════════════════════════ */
 .chat-card {
   border-radius: 20px;
   background: hsl(var(--card));
@@ -282,7 +350,7 @@ html.dark .app-header {
 }
 
 .new-search-action.ant-btn:hover {
-  background: color-mix(in srgb, hsl(var(--muted)) 36%, hsl(var(--card))) !important;
+  background: hsl(var(--muted)) !important;
   color: hsl(var(--foreground)) !important;
 }
 
@@ -298,12 +366,10 @@ html.dark .app-header {
   border-radius: 14px;
   border: 1px solid hsl(var(--border));
   background: hsl(var(--card));
-  background: color-mix(in srgb, hsl(var(--card)) 85%, transparent);
 }
 
 .message-row-error {
   border-color: hsl(var(--destructive));
-  background: hsl(var(--card));
   background: color-mix(in srgb, hsl(var(--destructive)) 12%, hsl(var(--card)));
 }
 
@@ -338,42 +404,97 @@ html.dark .app-header {
   color: hsl(var(--muted-foreground));
 }
 
-.history-chat-item {
-  width: 100%;
-  border-radius: 12px;
-  border: 1px solid hsl(var(--border));
-  background: hsl(var(--card));
-  color: hsl(var(--foreground));
-  padding: 8px 12px;
-  text-align: left;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+/* ══════════════════════════════════════════════
+   ANT DESIGN OVERRIDES – BOTH THEMES
+   ══════════════════════════════════════════════ */
+
+/* Layout backgrounds */
+.ant-layout {
+  background: hsl(var(--background)) !important;
 }
 
-.history-chat-item:hover {
-  background: color-mix(in srgb, hsl(var(--muted)) 36%, hsl(var(--card)));
+.ant-layout-content {
+  background: hsl(var(--background)) !important;
 }
 
-.history-chat-item-active {
-  border-color: hsl(var(--primary));
-  background: color-mix(in srgb, hsl(var(--primary)) 14%, transparent);
+.ant-layout-sider {
+  background: hsl(var(--sidebar-bg)) !important;
 }
 
-.history-chat-title.ant-typography,
-.history-chat-item .ant-typography {
-  color: hsl(var(--foreground));
+/* Cards */
+.ant-card {
+  background: hsl(var(--card)) !important;
+  border-color: hsl(var(--border)) !important;
+  color: hsl(var(--foreground)) !important;
 }
 
-.history-chat-meta.ant-typography {
-  color: hsl(var(--muted-foreground));
+.ant-card .ant-card-body {
+  background: hsl(var(--card)) !important;
 }
 
+/* Typography */
+.ant-typography {
+  color: hsl(var(--foreground)) !important;
+}
+
+.ant-typography.ant-typography-secondary {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+/* Buttons */
+.ant-btn-text {
+  color: hsl(var(--foreground)) !important;
+}
+
+.ant-btn-text:hover {
+  background: hsl(var(--muted)) !important;
+}
+
+/* Inputs */
+.ant-input {
+  background: hsl(var(--composer-bg)) !important;
+  color: hsl(var(--foreground)) !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+.ant-input::placeholder {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+.ant-input-affix-wrapper {
+  background: hsl(var(--composer-bg)) !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+/* Alerts */
+.ant-alert {
+  background: hsl(var(--card)) !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+/* Skeleton */
+.ant-skeleton .ant-skeleton-content .ant-skeleton-title,
+.ant-skeleton .ant-skeleton-content .ant-skeleton-paragraph > li {
+  background: hsl(var(--muted)) !important;
+}
+
+/* List */
+.ant-list-header {
+  border-bottom: none !important;
+}
+
+/* Switch */
+.ant-switch {
+  background: hsl(var(--muted)) !important;
+}
+
+.ant-switch-checked {
+  background: hsl(var(--foreground)) !important;
+}
+
+/* ── Responsive ── */
 @media (max-width: 640px) {
-  .app-header-inner {
-    align-items: flex-start;
-  }
-
-  .app-header-controls {
-    width: 100%;
-    justify-content: space-between;
+  .history-sider.ant-layout-sider {
+    display: none !important;
   }
 }

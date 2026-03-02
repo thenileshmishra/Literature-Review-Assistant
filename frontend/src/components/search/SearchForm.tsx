@@ -1,95 +1,86 @@
 'use client'
 
-import { useState } from 'react'
-import {
-  Card,
-  Form,
-  Input,
-  Button,
-  Alert,
-  Space,
-  Typography,
-} from 'antd'
-import { SearchOutlined, LoadingOutlined } from '@ant-design/icons'
+import { useState, useRef, useEffect } from 'react'
+import { ArrowUp, Loader2 } from 'lucide-react'
 import type { CreateReviewRequest } from '@/lib/types/api'
 
-const { Title, Text } = Typography
 interface SearchFormProps {
   onSubmit: (request: CreateReviewRequest) => void
   isLoading?: boolean
 }
 
-
 export function SearchForm({ onSubmit, isLoading = false }: SearchFormProps) {
-  const [form] = Form.useForm()
+  const [value, setValue] = useState('')
   const [error, setError] = useState('')
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const handleFinish = (values: any) => {
+  useEffect(() => {
+    textareaRef.current?.focus()
+  }, [])
+
+  const autoResize = () => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 200) + 'px'
+  }
+
+  const handleSubmit = () => {
+    const trimmed = value.trim()
     setError('')
 
-    if (values.topic.trim().length < 3) {
+    if (trimmed.length < 3) {
       setError('Topic must be at least 3 characters long')
       return
     }
 
-    onSubmit({
-      topic: values.topic.trim(),
-    })
+    onSubmit({ topic: trimmed })
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      if (!isLoading && value.trim()) {
+        handleSubmit()
+      }
+    }
   }
 
   return (
-    <Card className="search-card" bordered={false}>
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <div>
-          <Title level={4} style={{ marginBottom: 4 }}>Start your review</Title>
-          <Text type="secondary">
-            Ask a focused research question and receive an agent-produced literature map.
-          </Text>
-        </div>
+    <div className="composer-container">
+      <h1 className="composer-heading">What would you like to review?</h1>
 
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleFinish}
+      <div className="composer-box">
+        <textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value)
+            autoResize()
+          }}
+          onKeyDown={handleKeyDown}
+          placeholder="Ask anything"
+          disabled={isLoading}
+          rows={1}
+        />
+        <button
+          type="button"
+          className="composer-submit-btn"
+          onClick={handleSubmit}
+          disabled={isLoading || !value.trim()}
+          aria-label="Submit"
         >
-          {/* Topic Input */}
-          <Form.Item
-            name="topic"
-            rules={[
-              { required: true, message: 'Please enter a topic' },
-              { min: 3, message: 'Topic must be at least 3 characters' },
-            ]}
-          >
-            <Input
-              placeholder="e.g., Graph-Based Memory for AI Agents"
-              disabled={isLoading}
-              size="large"
-              prefix={<SearchOutlined />}
-            />
-          </Form.Item>
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <ArrowUp className="h-4 w-4" />
+          )}
+        </button>
+      </div>
 
-          {error && <Alert type="error" message={error} showIcon />}
-
-          {/* Submit Button */}
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              size="large"
-              block
-              disabled={isLoading}
-              icon={
-                isLoading ? <LoadingOutlined /> : <SearchOutlined />
-              }
-              loading={isLoading}
-            >
-              {isLoading
-                ? 'Starting Review...'
-                : 'Start Literature Review'}
-            </Button>
-          </Form.Item>
-        </Form>
-      </Space>
-    </Card>
+      {error && (
+        <p className="text-sm mt-3 text-destructive">{error}</p>
+      )}
+    </div>
   )
 }

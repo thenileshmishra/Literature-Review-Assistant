@@ -1,10 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { Card, ConfigProvider, Layout, Alert, Button, Skeleton, Space, theme as antdTheme } from 'antd'
-import { MessageSquarePlus } from 'lucide-react'
-import { Header } from '@/components/layout/Header'
+import { MessageSquarePlus, Moon, Sun } from 'lucide-react'
 import { SearchForm } from '@/components/search/SearchForm'
 import type { ChatHistoryItem, ChatSession, CreateReviewRequest } from '@/lib/types/api'
 import { createReview } from '@/lib/api/reviews'
@@ -42,10 +41,7 @@ export default function Home() {
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
-    if (typeof document === 'undefined') {
-      return 'dark'
-    }
-
+    if (typeof document === 'undefined') return 'dark'
     return document.documentElement.classList.contains('light') ? 'light' : 'dark'
   })
 
@@ -63,15 +59,13 @@ export default function Home() {
     [activeChatId, chats]
   )
 
+  // Only show chats that have actual content (messages or a reviewId)
   const sidebarItems: ChatHistoryItem[] = useMemo(
-    () => chats.map(({ id, title, createdAt, updatedAt, status, messageCount }) => ({
-      id,
-      title,
-      createdAt,
-      updatedAt,
-      status,
-      messageCount,
-    })),
+    () => chats
+      .filter((chat) => chat.messages.length > 0 || chat.reviewId || chat.status !== 'pending')
+      .map(({ id, title, createdAt, updatedAt, status, messageCount }) => ({
+        id, title, createdAt, updatedAt, status, messageCount,
+      })),
     [chats]
   )
 
@@ -103,7 +97,6 @@ export default function Home() {
     const root = document.documentElement
     root.classList.toggle('dark', themeMode === 'dark')
     root.classList.toggle('light', themeMode === 'light')
-
     localStorage.setItem(THEME_KEY, themeMode)
   }, [themeMode])
 
@@ -112,21 +105,12 @@ export default function Home() {
       setIsCreating(true)
       setError(null)
 
-      let targetChatId = activeChatId
-      if (!targetChatId) {
-        const nextChat = createChat({ title: request.topic })
-        targetChatId = nextChat.id
-        setActiveChatIdState(nextChat.id)
-        setActiveChatId(nextChat.id)
-      }
-
-      const trimmedTitle = request.topic.trim().slice(0, 50)
-      updateChat(targetChatId, {
-        title: trimmedTitle || 'New chat',
-        messages: [],
-        status: 'pending',
-        reviewId: undefined,
-      })
+      // Always create a new chat on submit
+      const trimmedTitle = request.topic.trim().slice(0, 50) || 'New chat'
+      const nextChat = createChat({ title: trimmedTitle })
+      const targetChatId = nextChat.id
+      setActiveChatIdState(nextChat.id)
+      setActiveChatId(nextChat.id)
       setChats(getAllChats())
 
       const review = await createReview(request)
@@ -155,43 +139,31 @@ export default function Home() {
   useEffect(() => {
     if (!streamChatId) return
     if (streamStatus !== 'completed' && streamStatus !== 'failed') return
-
     setStreamReviewId(null)
     setStreamChatId(null)
   }, [streamChatId, streamStatus])
 
-  const handleNewChat = () => {
-    if (activeChat && activeChat.messages.length === 0 && activeChat.status === 'pending' && !activeChat.reviewId) {
-      setError(null)
-      return
-    }
-
-    const existingDraft = chats.find(
-      (chat) => chat.messages.length === 0 && chat.status === 'pending' && !chat.reviewId
-    )
-
-    if (existingDraft) {
-      setActiveChatIdState(existingDraft.id)
-      setActiveChatId(existingDraft.id)
-      setError(null)
-      return
-    }
-
-    const nextChat = createChat()
-    setChats(getAllChats())
-    setActiveChatIdState(nextChat.id)
-    setActiveChatId(nextChat.id)
+  // "New chat" just resets to the composer view (no storage entry created)
+  const handleNewChat = useCallback(() => {
+    setActiveChatIdState(null)
+    setActiveChatId(null)
     setError(null)
-  }
+  }, [])
 
-  const handleSelectChat = (chatId: string) => {
+  const handleSelectChat = useCallback((chatId: string) => {
     const chat = getChat(chatId)
     if (!chat) return
-
     setActiveChatIdState(chat.id)
     setActiveChatId(chat.id)
     setError(null)
-  }
+  }, [])
+
+  const handleRenameChat = useCallback((chatId: string, newTitle: string) => {
+    const trimmed = newTitle.trim()
+    if (!trimmed) return
+    updateChat(chatId, { title: trimmed })
+    setChats(getAllChats())
+  }, [])
 
   const shouldShowSearchForm =
     !activeChat || (displayMessages.length === 0 && displayStatus === 'pending' && !isActiveStreaming)
@@ -202,48 +174,60 @@ export default function Home() {
         algorithm: themeMode === 'dark' ? darkAlgorithm : defaultAlgorithm,
         token: {
           borderRadius: 12,
-          colorPrimary: '#1f6feb',
           fontFamily: 'inherit',
-          colorText: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.88)' : 'rgba(15, 23, 42, 0.88)',
-          colorTextSecondary: themeMode === 'dark' ? 'rgba(226, 232, 240, 0.72)' : 'rgba(15, 23, 42, 0.62)',
-          colorBgBase: themeMode === 'dark' ? '#0f172a' : '#ffffff',
-          colorBgContainer: themeMode === 'dark' ? '#111827' : '#ffffff',
+          colorText: themeMode === 'dark' ? 'rgba(255,255,255,0.88)' : 'rgba(15,23,42,0.88)',
+          colorTextSecondary: themeMode === 'dark' ? 'rgba(226,232,240,0.72)' : 'rgba(15,23,42,0.62)',
+          colorBgBase: themeMode === 'dark' ? '#1e1e24' : '#ffffff',
+          colorBgContainer: themeMode === 'dark' ? '#26262e' : '#ffffff',
         },
       }}
     >
       <Layout className="app-shell">
-        <Header
-          themeMode={themeMode}
-          onThemeChange={setThemeMode}
-        />
+        {/* ── Sidebar ── */}
+        <Sider
+          width={260}
+          collapsed={isSidebarCollapsed}
+          collapsible
+          trigger={null}
+          collapsedWidth={60}
+          className="history-sider"
+        >
+          <div className="history-sider-inner">
+            <HistorySidebar
+              chats={sidebarItems}
+              activeChatId={activeChatId}
+              onNewChat={handleNewChat}
+              onSelectChat={handleSelectChat}
+              onRenameChat={handleRenameChat}
+              collapsed={isSidebarCollapsed}
+              onToggleCollapse={() => setIsSidebarCollapsed((v) => !v)}
+            />
+          </div>
+        </Sider>
 
-        <Layout className="app-main-layout">
-          <Sider
-            width={300}
-            collapsed={isSidebarCollapsed}
-            collapsible
-            trigger={null}
-            collapsedWidth={84}
-            className="history-sider"
-          >
-            <div className="history-sider-inner">
-              <HistorySidebar
-                chats={sidebarItems}
-                activeChatId={activeChatId}
-                onNewChat={handleNewChat}
-                onSelectChat={handleSelectChat}
-                collapsed={isSidebarCollapsed}
-                onToggleCollapse={() => setIsSidebarCollapsed((value) => !value)}
-              />
+        {/* ── Main panel ── */}
+        <Layout>
+          <div className="top-bar">
+            <div className="text-lg font-semibold text-foreground">
+              Literature Review
             </div>
-          </Sider>
+            <button
+              type="button"
+              onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
+              className="sidebar-new-chat-btn"
+              aria-label="Toggle theme"
+              title={themeMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {themeMode === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
+          </div>
 
           <Content className="app-content">
             <div className="content-wrap">
               {shouldShowSearchForm ? (
                 <SearchForm onSubmit={handleSubmit} isLoading={isCreating} />
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-6 px-4 pt-8 pb-16">
                   <Button
                     type="text"
                     icon={<MessageSquarePlus className="h-4 w-4" />}
@@ -277,7 +261,7 @@ export default function Home() {
                   type="error"
                   message={error || streamError}
                   showIcon
-                  className="mt-6"
+                  className="mt-6 mx-4"
                 />
               )}
             </div>

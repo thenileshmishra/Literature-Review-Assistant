@@ -1,41 +1,17 @@
 'use client'
 
-import { useMemo } from 'react'
-import { Button, List, Space, Typography, Tooltip } from 'antd'
-import { MessageSquarePlus, MoreHorizontal, PanelLeft, PanelRight } from 'lucide-react'
+import { useMemo, useState, useRef, useEffect } from 'react'
+import { MessageSquarePlus, PanelLeft, PanelRight, Pencil, Check, X } from 'lucide-react'
 import type { ChatHistoryItem } from '@/lib/types/api'
-
-const { Text } = Typography
 
 interface HistorySidebarProps {
   chats: ChatHistoryItem[]
   activeChatId: string | null
   onNewChat: () => void
   onSelectChat: (chatId: string) => void
+  onRenameChat: (chatId: string, newTitle: string) => void
   collapsed?: boolean
   onToggleCollapse: () => void
-}
-
-function formatRelativeTime(isoDate: string) {
-  const now = Date.now()
-  const target = new Date(isoDate).getTime()
-  const diffMs = target - now
-
-  const minute = 60 * 1000
-  const hour = 60 * minute
-  const day = 24 * hour
-
-  const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
-
-  if (Math.abs(diffMs) < hour) {
-    return rtf.format(Math.round(diffMs / minute), 'minute')
-  }
-
-  if (Math.abs(diffMs) < day) {
-    return rtf.format(Math.round(diffMs / hour), 'hour')
-  }
-
-  return rtf.format(Math.round(diffMs / day), 'day')
 }
 
 export function HistorySidebar({
@@ -43,6 +19,7 @@ export function HistorySidebar({
   activeChatId,
   onNewChat,
   onSelectChat,
+  onRenameChat,
   collapsed = false,
   onToggleCollapse,
 }: HistorySidebarProps) {
@@ -51,91 +28,153 @@ export function HistorySidebar({
     [chats]
   )
 
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+  const renameInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (renamingId && renameInputRef.current) {
+      renameInputRef.current.focus()
+      renameInputRef.current.select()
+    }
+  }, [renamingId])
+
+  const startRename = (chat: ChatHistoryItem, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setRenamingId(chat.id)
+    setRenameValue(chat.title)
+  }
+
+  const confirmRename = () => {
+    if (renamingId && renameValue.trim()) {
+      onRenameChat(renamingId, renameValue.trim())
+    }
+    setRenamingId(null)
+    setRenameValue('')
+  }
+
+  const cancelRename = () => {
+    setRenamingId(null)
+    setRenameValue('')
+  }
+
+  const handleRenameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      confirmRename()
+    } else if (e.key === 'Escape') {
+      cancelRename()
+    }
+  }
+
   return (
-    <div className="h-full flex flex-col gap-3">
-      <div className="flex items-center justify-end">
-        <Tooltip title={collapsed ? 'Expand sidebar' : 'Shrink sidebar'} placement="right">
-          <Button
-            type="text"
-            icon={collapsed ? <PanelRight className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
-            onClick={onToggleCollapse}
-            aria-label={collapsed ? 'Expand sidebar' : 'Shrink sidebar'}
-          />
-        </Tooltip>
-      </div>
+    <div className="h-full flex flex-col">
+      {/* Top row: toggle + new chat */}
+      <div className="flex items-center justify-between px-1 py-2">
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className="sidebar-new-chat-btn"
+          aria-label={collapsed ? 'Expand sidebar' : 'Shrink sidebar'}
+          title={collapsed ? 'Expand sidebar' : 'Shrink sidebar'}
+        >
+          {collapsed ? <PanelRight className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
+        </button>
 
-      {collapsed && (
-        <Tooltip title="New chat" placement="right">
-          <Button type="primary" icon={<MessageSquarePlus className="h-4 w-4" />} onClick={onNewChat} block />
-        </Tooltip>
-      )}
-
-      {!collapsed && sortedChats.length > 0 && (
-        <List
-          header={
-            <button
-              type="button"
-              onClick={onNewChat}
-              className="history-chat-item"
-            >
-              <Space align="center" size="small">
-                <MessageSquarePlus className="h-4 w-4" />
-                <Text className="history-chat-title">New chat</Text>
-              </Space>
-            </button>
-          }
-          dataSource={sortedChats}
-          className="overflow-y-auto"
-          renderItem={(chat) => {
-            const isActive = chat.id === activeChatId
-
-            return (
-              <List.Item className="!border-none !px-0 !py-1">
-                <button
-                  type="button"
-                  onClick={() => onSelectChat(chat.id)}
-                  className={`history-chat-item ${isActive ? 'history-chat-item-active' : ''}`}
-                >
-                  <Space direction="vertical" size={2} className="w-full">
-                    <div className="flex items-start justify-between gap-2">
-                      <Text strong={isActive} className="line-clamp-2 history-chat-title">
-                        {chat.title || 'Untitled chat'}
-                      </Text>
-
-                      <Tooltip title="More actions (coming soon)">
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={<MoreHorizontal className="h-4 w-4" />}
-                          onClick={(event) => event.stopPropagation()}
-                        />
-                      </Tooltip>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-2">
-                      <Text type="secondary" className="text-xs history-chat-meta">
-                        {formatRelativeTime(chat.updatedAt)}
-                      </Text>
-                    </div>
-                  </Space>
-                </button>
-              </List.Item>
-            )
-          }}
-        />
-      )}
-
-      {!collapsed && sortedChats.length === 0 && (
         <button
           type="button"
           onClick={onNewChat}
-          className="history-chat-item"
+          className="sidebar-new-chat-btn"
+          aria-label="New chat"
+          title="New chat"
         >
-          <Space align="center" size="small">
-            <MessageSquarePlus className="h-4 w-4" />
-            <Text className="history-chat-title">New chat</Text>
-          </Space>
+          <MessageSquarePlus className="h-4 w-4" />
         </button>
+      </div>
+
+      {/* Chat list */}
+      {!collapsed && (
+        <nav className="flex-1 overflow-y-auto mt-2 flex flex-col gap-0.5 px-1">
+          {sortedChats.map((chat) => {
+            const isActive = chat.id === activeChatId
+            const isRenaming = chat.id === renamingId
+
+            if (isRenaming) {
+              return (
+                <div
+                  key={chat.id}
+                  className={`history-chat-item ${isActive ? 'history-chat-item-active' : ''}`}
+                >
+                  <div className="flex items-center gap-1">
+                    <input
+                      ref={renameInputRef}
+                      type="text"
+                      className="rename-input"
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onKeyDown={handleRenameKeyDown}
+                      onBlur={confirmRename}
+                      aria-label="Rename chat"
+                      placeholder="Chat name"
+                    />
+                    <button
+                      type="button"
+                      className="flex-shrink-0 p-0.5 rounded hover:bg-accent"
+                      onClick={confirmRename}
+                      aria-label="Confirm rename"
+                    >
+                      <Check className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
+                    <button
+                      type="button"
+                      className="flex-shrink-0 p-0.5 rounded hover:bg-accent"
+                      onClick={cancelRename}
+                      aria-label="Cancel rename"
+                    >
+                      <X className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
+                  </div>
+                </div>
+              )
+            }
+
+            return (
+              <button
+                key={chat.id}
+                type="button"
+                onClick={() => onSelectChat(chat.id)}
+                className={`history-chat-item group ${isActive ? 'history-chat-item-active' : ''}`}
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <span className="block truncate text-sm flex-1">
+                    {chat.title || 'Untitled chat'}
+                  </span>
+                  {isActive && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      className="flex-shrink-0 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-accent transition-opacity"
+                      onClick={(e) => startRename(chat, e)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') startRename(chat, e as unknown as React.MouseEvent)
+                      }}
+                      aria-label="Rename chat"
+                      title="Rename"
+                    >
+                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                    </span>
+                  )}
+                </div>
+              </button>
+            )
+          })}
+
+          {sortedChats.length === 0 && (
+            <div className="px-3 py-6 text-center text-sm text-muted-foreground">
+              No conversations yet
+            </div>
+          )}
+        </nav>
       )}
     </div>
   )
