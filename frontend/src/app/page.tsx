@@ -6,13 +6,26 @@ import { Card, ConfigProvider, Layout, Alert, Button, Skeleton, Space, theme as 
 import { MessageSquarePlus, Moon, Sun } from 'lucide-react'
 import { SearchForm } from '@/components/search/SearchForm'
 import type { ChatHistoryItem, ChatSession, CreateReviewRequest, ReviewResponse } from '@/lib/types/api'
-import { createReview, listReviews, deleteReview } from '@/lib/api/reviews'
+import { createReview, getReview, deleteReview } from '@/lib/api/reviews'
 import { useReviewStream } from '@/lib/hooks/useReviewStream'
 import { HistorySidebar } from '@/components/chat/HistorySidebar'
 
 const { Content, Sider } = Layout
 const { defaultAlgorithm, darkAlgorithm } = antdTheme
 const THEME_KEY = 'app-theme'
+const MY_REVIEWS_KEY = 'litrev-my-review-ids'
+
+function getMyReviewIds(): string[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(MY_REVIEWS_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function saveMyReviewIds(ids: string[]) {
+  localStorage.setItem(MY_REVIEWS_KEY, JSON.stringify(ids))
+}
 
 const MessageDisplay = dynamic(
   () => import('@/components/chat/MessageDisplay').then((module) => module.MessageDisplay),
@@ -80,21 +93,29 @@ export default function Home() {
   const displayReviewId = activeChat?.reviewId ?? null
   const isActiveStreaming = isStreaming && streamReviewId === activeChatId
 
-  // ── Load reviews from backend on mount ──
+  // ── Load only this browser's reviews on mount ──
   useEffect(() => {
     let cancelled = false
     async function load() {
       try {
-        const reviews = await listReviews(50)
+        const myIds = getMyReviewIds()
+        if (myIds.length === 0) { setIsLoadingChats(false); return }
+        const results = await Promise.allSettled(myIds.map((id) => getReview(id)))
         if (cancelled) return
-        const mapped = reviews.map(reviewToChat)
-        setChats(mapped)
-        if (mapped.length > 0) {
-          setActiveChatId(mapped[0].id)
-        }
+        const validReviews: ChatSession[] = []
+        const validIds: string[] = []
+        results.forEach((r, i) => {
+          if (r.status === 'fulfilled') {
+            validReviews.push(reviewToChat(r.value))
+            validIds.push(myIds[i])
+          }
+        })
+        // Clean up expired IDs
+        if (validIds.length !== myIds.length) saveMyReviewIds(validIds)
+        setChats(validReviews)
+        if (validReviews.length > 0) setActiveChatId(validReviews[0].id)
       } catch (err) {
         console.error('Failed to load reviews from backend:', err)
-        // Not fatal — user can still create new reviews
       } finally {
         if (!cancelled) setIsLoadingChats(false)
       }
@@ -122,6 +143,7 @@ export default function Home() {
       setChats((prev) => [newChat, ...prev])
       setActiveChatId(newChat.id)
       setStreamReviewId(review.id)
+      saveMyReviewIds([review.id, ...getMyReviewIds()])
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to create review')
       console.error('Error creating review:', err)
@@ -162,6 +184,7 @@ export default function Home() {
       // Session might already be expired on backend, still remove locally
     }
     setChats((prev) => prev.filter((c) => c.id !== chatId))
+    saveMyReviewIds(getMyReviewIds().filter((id) => id !== chatId))
     if (activeChatId === chatId) {
       setActiveChatId(null)
     }
