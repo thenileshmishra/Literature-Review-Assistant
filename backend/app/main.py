@@ -49,10 +49,21 @@ app.include_router(stream.router, prefix="/api/v1", tags=["Streaming"])
 @app.on_event("startup")
 async def startup_event():
     """Create DB tables and log config on startup."""
+    from sqlalchemy import text
+
     logger.info(f"Starting {settings.api_title} v{settings.api_version}")
     logger.info(f"CORS origins: {settings.cors_origins}")
     async with engine.begin() as conn:
+        # Create any tables that don't exist yet (no-op for existing tables)
         await conn.run_sync(Base.metadata.create_all)
+        # Ensure user_id column exists on reviews table —
+        # handles databases created before JWT auth was added
+        try:
+            await conn.execute(
+                text("ALTER TABLE reviews ADD COLUMN IF NOT EXISTS user_id UUID")
+            )
+        except Exception:
+            pass  # column already exists with correct type
     logger.info("Database connected and tables ready")
 
 

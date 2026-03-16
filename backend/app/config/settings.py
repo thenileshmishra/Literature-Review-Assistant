@@ -127,10 +127,12 @@ class BackendSettings(BaseSettings):
         default=60, validation_alias="JWT_ACCESS_TOKEN_EXPIRE_MINUTES"
     )
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
-        extra = "ignore"
+    model_config = SettingsConfigDict(
+        env_file=(".env", "../.env"),  # works whether you run from backend/ or project root
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
 
 
