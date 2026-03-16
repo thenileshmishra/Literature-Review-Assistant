@@ -61,7 +61,9 @@ export function useReviewStream(
     setStatus('in_progress')
     setError(null)
 
-    const eventSource = new EventSource(`${API_URL}/api/v1/reviews/${reviewId}/stream`)
+    const token = typeof window !== 'undefined' ? localStorage.getItem('litrev-access-token') : null
+    const qs = token ? `?token=${encodeURIComponent(token)}` : ''
+    const eventSource = new EventSource(`${API_URL}/api/v1/reviews/${reviewId}/stream${qs}`)
     eventSourceRef.current = eventSource
 
     eventSource.addEventListener('message', (e) => {

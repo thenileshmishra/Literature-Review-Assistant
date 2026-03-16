@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Script from "next/script"
 import { Space_Grotesk } from "next/font/google"
 import { AntdStyleRegistry } from "@/components/providers/AntdStyleRegistry"
+import { AuthProvider } from "@/lib/context/AuthContext"
 import "antd/dist/reset.css"
 import "./globals.css"
 
@@ -35,9 +36,11 @@ export default function RootLayout({
       </head>
       <body className={spaceGrotesk.className}>
         <AntdStyleRegistry>
-          <main className="min-h-screen">
-            {children}
-          </main>
+          <AuthProvider>
+            <main className="min-h-screen">
+              {children}
+            </main>
+          </AuthProvider>
         </AntdStyleRegistry>
       </body>
     </html>

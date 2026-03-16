@@ -73,3 +73,28 @@ export interface SSEErrorEvent {
 }
 
 export type SSEEvent = SSEMessageEvent | SSECompleteEvent | SSEErrorEvent
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+export interface RegisterRequest {
+  email: string
+  password: string
+  full_name?: string
+}
+
+export interface LoginRequest {
+  email: string
+  password: string
+}
+
+export interface TokenResponse {
+  access_token: string
+  token_type: string
+}
+
+export interface UserResponse {
+  id: string
+  email: string
+  full_name: string | null
+  created_at: string
+}

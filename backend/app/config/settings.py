@@ -117,6 +117,16 @@ class BackendSettings(BaseSettings):
         validation_alias="DATABASE_URL",
     )
 
+    # JWT Configuration
+    jwt_secret_key: str = Field(
+        default="change-me-in-production-use-a-long-random-string",
+        validation_alias="JWT_SECRET_KEY",
+    )
+    jwt_algorithm: str = Field(default="HS256", validation_alias="JWT_ALGORITHM")
+    jwt_access_token_expire_minutes: int = Field(
+        default=60, validation_alias="JWT_ACCESS_TOKEN_EXPIRE_MINUTES"
+    )
+
     class Config:
         env_file = ".env"
         case_sensitive = False

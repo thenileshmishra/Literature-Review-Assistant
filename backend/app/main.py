@@ -11,7 +11,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api.routes import health, reviews, stream
+from app.api.routes import auth, health, reviews, stream
 from app.config.settings import get_backend_settings
 from app.db.database import engine
 from app.db.models import Base
@@ -70,6 +70,7 @@ async def rate_limit_middleware(request: Request, call_next):
 
 # Include routers
 app.include_router(health.router, tags=["Health"])
+app.include_router(auth.router, prefix="/api/v1", tags=["Auth"])
 app.include_router(reviews.router, prefix="/api/v1", tags=["Reviews"])
 app.include_router(stream.router, prefix="/api/v1", tags=["Streaming"])
 

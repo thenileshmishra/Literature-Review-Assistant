@@ -2,7 +2,18 @@
 
 import re
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
+
+
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=8, description="At least 8 characters")
+    full_name: str | None = Field(default=None, max_length=100)
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
 
 # ── Prompt injection / malicious input patterns ──
 _INJECTION_PATTERNS = [

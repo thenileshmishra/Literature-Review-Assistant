@@ -2,13 +2,15 @@
 
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
-import { Card, ConfigProvider, Layout, Alert, Button, Skeleton, Space, theme as antdTheme } from 'antd'
-import { MessageSquarePlus, Moon, Sun } from 'lucide-react'
+import { Card, ConfigProvider, Layout, Alert, Button, Skeleton, theme as antdTheme } from 'antd'
+import { LogOut, MessageSquarePlus, Moon, Sun } from 'lucide-react'
 import { SearchForm } from '@/components/search/SearchForm'
 import type { ChatHistoryItem, ChatSession, CreateReviewRequest, ReviewResponse } from '@/lib/types/api'
 import { createReview, getReview, deleteReview } from '@/lib/api/reviews'
 import { useReviewStream } from '@/lib/hooks/useReviewStream'
 import { HistorySidebar } from '@/components/chat/HistorySidebar'
+import { useAuth } from '@/lib/context/AuthContext'
+import LoginPage from '@/app/login/page'
 
 const { Content, Sider } = Layout
 const { defaultAlgorithm, darkAlgorithm } = antdTheme
@@ -52,6 +54,7 @@ function reviewToChat(r: ReviewResponse): ChatSession {
 }
 
 export default function Home() {
+  const { isAuthenticated, isLoading, logout } = useAuth()
   const [chats, setChats] = useState<ChatSession[]>([])
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
@@ -200,6 +203,10 @@ export default function Home() {
   const shouldShowSearchForm =
     !activeChat || (displayMessages.length === 0 && displayStatus === 'pending' && !isActiveStreaming)
 
+  // ── Auth gate ──
+  if (isLoading) return null
+  if (!isAuthenticated) return <LoginPage />
+
   return (
     <ConfigProvider
       theme={{
@@ -242,15 +249,26 @@ export default function Home() {
             <div className="text-lg font-semibold text-foreground">
               Literature Review
             </div>
-            <button
-              type="button"
-              onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
-              className="sidebar-new-chat-btn"
-              aria-label="Toggle theme"
-              title={themeMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {themeMode === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
+                className="sidebar-new-chat-btn"
+                aria-label="Toggle theme"
+                title={themeMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {themeMode === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
+              <button
+                type="button"
+                onClick={logout}
+                className="sidebar-new-chat-btn"
+                aria-label="Sign out"
+                title="Sign out"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           <Content className="app-content">
@@ -270,10 +288,10 @@ export default function Home() {
 
                   {isActiveStreaming && displayMessages.length === 0 && (
                     <Card className="chat-card">
-                      <Space direction="vertical" size="middle" className="w-full">
+                      <div className="flex flex-col gap-4 w-full">
                         <Skeleton.Input active size="small" className="w-52" />
                         <Skeleton active paragraph={{ rows: 3 }} />
-                      </Space>
+                      </div>
                     </Card>
                   )}
 

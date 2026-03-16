@@ -52,14 +52,20 @@ class ReviewRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def create_review(self, topic, papers_limit, model) -> ReviewORM:
-        review = ReviewORM(topic=topic, papers_limit=papers_limit, model=model)
+    async def create_review(self, topic: str, papers_limit: int, model: str, user_id: str) -> ReviewORM:
+        review = ReviewORM(
+            topic=topic,
+            papers_limit=papers_limit,
+            model=model,
+            user_id=UUID(str(user_id)),
+        )
         self.db.add(review)
         await self.db.commit()
         await self.db.refresh(review)
         return review
 
-    async def get_review(self, review_id) -> ReviewORM | None:
+    async def get_review(self, review_id: str, user_id: str | None = None) -> ReviewORM | None:
+        """Fetch review by ID. If user_id is given, also enforce ownership."""
         try:
             uid = UUID(str(review_id))
         except ValueError:
@@ -69,10 +75,12 @@ class ReviewRepository:
             .options(selectinload(ReviewORM.messages), selectinload(ReviewORM.papers))
             .where(ReviewORM.id == uid)
         )
+        if user_id:
+            stmt = stmt.where(ReviewORM.user_id == UUID(str(user_id)))
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def update_status(self, review_id, status):
+    async def update_status(self, review_id: str, status: str) -> None:
         review = await self.get_review(review_id)
         if review:
             review.status = status
@@ -80,34 +88,44 @@ class ReviewRepository:
                 review.completed_at = datetime.utcnow()
             await self.db.commit()
 
-    async def add_message(self, review_id, source, content, message_type="system"):
+    async def add_message(self, review_id: str, source: str, content: str, message_type: str = "system") -> None:
         msg = MessageORM(
-            review_id=UUID(str(review_id)), source=source, content=content, message_type=message_type
+            review_id=UUID(str(review_id)),
+            source=source,
+            content=content,
+            message_type=message_type,
         )
         self.db.add(msg)
         await self.db.commit()
 
-    async def add_paper(self, review_id, title, authors, published, summary, pdf_url):
+    async def add_paper(self, review_id: str, title: str, authors: list, published: str, summary: str, pdf_url: str) -> None:
         paper = PaperORM(
-            review_id=UUID(str(review_id)), title=title, authors=authors,
-            published=published, summary=summary, pdf_url=pdf_url
+            review_id=UUID(str(review_id)),
+            title=title,
+            authors=authors,
+            published=published,
+            summary=summary,
+            pdf_url=pdf_url,
         )
         self.db.add(paper)
         await self.db.commit()
 
-    async def delete_review(self, review_id) -> bool:
-        review = await self.get_review(review_id)
+    async def delete_review(self, review_id: str, user_id: str) -> bool:
+        review = await self.get_review(review_id, user_id=user_id)
         if review:
             await self.db.delete(review)
             await self.db.commit()
             return True
         return False
 
-    async def list_reviews(self, limit=20, offset=0):
+    async def list_reviews(self, user_id: str, limit: int = 20, offset: int = 0) -> list[ReviewORM]:
+        """List reviews for a specific user only."""
         stmt = (
             select(ReviewORM)
+            .where(ReviewORM.user_id == UUID(str(user_id)))
             .order_by(ReviewORM.created_at.desc())
-            .offset(offset).limit(limit)
+            .offset(offset)
+            .limit(limit)
         )
         result = await self.db.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())

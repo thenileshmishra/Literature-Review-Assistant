@@ -87,6 +87,22 @@ class ReviewResponse(BaseModel):
         }
 
 
+class TokenResponse(BaseModel):
+    """JWT token response after login/register"""
+
+    access_token: str
+    token_type: str = "bearer"
+
+
+class UserResponse(BaseModel):
+    """Public user profile"""
+
+    id: str
+    email: str
+    full_name: str | None = None
+    created_at: datetime
+
+
 class HealthResponse(BaseModel):
     """Health check response"""
 
