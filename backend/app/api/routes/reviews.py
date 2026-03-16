@@ -5,7 +5,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user
+from app.api.deps import check_rate_limit, get_current_user
 from app.config.settings import get_settings
 from app.db.database import get_db
 from app.db.models import UserORM
@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
-@router.post("/reviews", response_model=ReviewResponse, status_code=201)
+@router.post("/reviews", response_model=ReviewResponse, status_code=201,
+             dependencies=[Depends(check_rate_limit)])
 async def create_review(
     request: CreateReviewRequest,
     current_user: UserORM = Depends(get_current_user),

@@ -1,7 +1,28 @@
-"""FastAPI dependencies — auth and DB"""
+"""FastAPI dependencies — auth, DB, and rate limiting"""
 
-from fastapi import Depends, HTTPException, Query, status
+import time
+from collections import defaultdict
+
+from fastapi import Depends, HTTPException, Query, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+# -- Per-IP rate limiter (dependency, NOT middleware — avoids greenlet issues) --
+_RATE_WINDOW = 60
+_RATE_LIMIT = 5
+_rate_store: dict[str, list[float]] = defaultdict(list)
+
+
+def check_rate_limit(request: Request) -> None:
+    """Dependency: enforces per-IP rate limit on review creation."""
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    _rate_store[client_ip] = [t for t in _rate_store[client_ip] if now - t < _RATE_WINDOW]
+    if len(_rate_store[client_ip]) >= _RATE_LIMIT:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many requests. Limit: {_RATE_LIMIT} reviews per {_RATE_WINDOW}s.",
+        )
+    _rate_store[client_ip].append(now)
 from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 

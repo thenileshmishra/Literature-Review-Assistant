@@ -37,8 +37,10 @@ services:
       - MAX_PAPERS=${MAX_PAPERS:-10}
       - DEFAULT_PAPERS=${DEFAULT_PAPERS:-5}
       - API_PORT=8000
-      - CORS_ORIGINS=http://localhost:3000,http://frontend:3000
+      - CORS_ORIGINS=["http://localhost:3000","http://frontend:3000"]
       - DATABASE_URL=postgresql+asyncpg://litrev_admin:${DB_PASSWORD:-localdevpassword}@postgres:5432/litrev
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-super-secret-jwt-key-change-in-production-32chars}
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-60}
     env_file:
       - .env
     depends_on:
@@ -46,7 +48,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -61,8 +61,8 @@ class ReviewRepository:
         )
         self.db.add(review)
         await self.db.commit()
-        await self.db.refresh(review)
-        return review
+        # Re-fetch with relationships eagerly loaded so orm_to_response can access them
+        return await self.get_review(str(review.id))
 
     async def get_review(self, review_id: str, user_id: str | None = None) -> ReviewORM | None:
         """Fetch review by ID. If user_id is given, also enforce ownership."""
