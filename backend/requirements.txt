@@ -27,3 +27,8 @@ arxiv>=2.0.0
 
 # CORS
 python-jose[cryptography]>=3.3.0
+
+# PostgreSQL
+sqlalchemy[asyncio]>=2.0.0
+asyncpg>=0.29.0
+alembic>=1.13.0

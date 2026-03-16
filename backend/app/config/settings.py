@@ -111,6 +111,12 @@ class BackendSettings(BaseSettings):
     log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
     debug: bool = Field(default=False, validation_alias="DEBUG")
 
+    # Database Configuration
+    database_url: str = Field(
+        default="postgresql+asyncpg://litrev_admin:password@localhost:5432/litrev",
+        validation_alias="DATABASE_URL",
+    )
+
     class Config:
         env_file = ".env"
         case_sensitive = False

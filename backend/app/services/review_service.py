@@ -7,10 +7,11 @@ from collections.abc import AsyncGenerator
 from datetime import datetime
 from typing import Any
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.exceptions import LitRevError
-from app.models.responses import ReviewStatus
+from app.db.review_repository import ReviewRepository
 from app.orchestrator.litrev_orchestrator import LitRevOrchestrator
-from app.services.session_manager import SessionManager
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +19,8 @@ logger = logging.getLogger(__name__)
 class ReviewService:
     """Service for managing literature reviews using AutoGen"""
 
-    def __init__(self, session_manager: SessionManager):
-        self.session_manager = session_manager
+    def __init__(self, db: AsyncSession):
+        self.repo = ReviewRepository(db)
 
     async def start_review(
         self, session_id: str, topic: str, papers_limit: int, model: str = "gpt-4o-mini"
@@ -38,7 +39,7 @@ class ReviewService:
         """
         try:
             # Update status to in_progress
-            self.session_manager.update_status(session_id, ReviewStatus.IN_PROGRESS)
+            await self.repo.update_status(session_id, "in_progress")
 
             logger.info(
                 f"Starting review {session_id}: topic='{topic}', papers={papers_limit}, model={model}"
@@ -59,9 +60,9 @@ class ReviewService:
                     # Determine message type
                     message_type = self._determine_message_type(source, content)
 
-                    # Store in session
-                    self.session_manager.add_message(
-                        session_id=session_id,
+                    # Store in database
+                    await self.repo.add_message(
+                        review_id=session_id,
                         source=source,
                         content=content,
                         message_type=message_type,
@@ -69,7 +70,7 @@ class ReviewService:
 
                     # Extract papers if search agent message
                     if source == "search_agent":
-                        self._extract_papers(session_id, content)
+                        await self._extract_papers(session_id, content)
 
                     # Yield message for streaming
                     yield {
@@ -80,7 +81,7 @@ class ReviewService:
                     }
 
             # Mark as completed
-            self.session_manager.update_status(session_id, ReviewStatus.COMPLETED)
+            await self.repo.update_status(session_id, "completed")
             logger.info(f"Completed review {session_id}")
 
             # Yield completion event
@@ -92,9 +93,9 @@ class ReviewService:
 
         except LitRevError as e:
             logger.error(f"LitRevError in review {session_id}: {e}")
-            self.session_manager.update_status(session_id, ReviewStatus.FAILED)
-            self.session_manager.add_message(
-                session_id=session_id,
+            await self.repo.update_status(session_id, "failed")
+            await self.repo.add_message(
+                review_id=session_id,
                 source="system",
                 content=f"Error: {str(e)}",
                 message_type="error",
@@ -107,9 +108,9 @@ class ReviewService:
 
         except Exception as e:
             logger.error(f"Unexpected error in review {session_id}: {e}", exc_info=True)
-            self.session_manager.update_status(session_id, ReviewStatus.FAILED)
-            self.session_manager.add_message(
-                session_id=session_id,
+            await self.repo.update_status(session_id, "failed")
+            await self.repo.add_message(
+                review_id=session_id,
                 source="system",
                 content=f"Unexpected error: {str(e)}",
                 message_type="error",
@@ -143,7 +144,7 @@ class ReviewService:
             return "error"
         return "system"
 
-    def _extract_papers(self, session_id: str, content: str) -> None:
+    async def _extract_papers(self, session_id: str, content: str) -> None:
         """Extract paper information from search agent message"""
         payload = self._parse_papers_payload(content)
         if not payload:
@@ -162,8 +163,8 @@ class ReviewService:
             if not all([title, authors, published, summary, pdf_url]):
                 continue
 
-            self.session_manager.add_paper(
-                session_id=session_id,
+            await self.repo.add_paper(
+                review_id=session_id,
                 title=title,
                 authors=authors,
                 published=published,

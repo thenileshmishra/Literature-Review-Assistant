@@ -13,8 +13,10 @@ from fastapi.responses import JSONResponse
 
 from app.api.routes import health, reviews, stream
 from app.config.settings import get_backend_settings
+from app.db.database import engine
+from app.db.models import Base
 
-# ── Simple in-memory rate limiter ──
+# -- Simple in-memory rate limiter --
 _RATE_WINDOW = 60  # seconds
 _RATE_LIMIT = 5  # max review creations per window per IP
 _rate_store: dict[str, list[float]] = defaultdict(list)
@@ -45,7 +47,8 @@ app.add_middleware(
     allow_headers=settings.cors_allow_headers,
 )
 
-# ── Rate-limit middleware (only on POST /api/v1/reviews) ──
+
+# -- Rate-limit middleware (only on POST /api/v1/reviews) --
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
     if request.method == "POST" and request.url.path.rstrip("/") == "/api/v1/reviews":
@@ -73,16 +76,23 @@ app.include_router(stream.router, prefix="/api/v1", tags=["Streaming"])
 
 @app.on_event("startup")
 async def startup_event():
-    """Application startup event"""
+    """Application startup event — create DB tables and log config"""
     logger.info(f"Starting {settings.api_title} v{settings.api_version}")
     logger.info(f"CORS origins: {settings.cors_origins}")
     logger.info(f"Debug mode: {settings.debug}")
 
+    # Create database tables if they don't exist
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    logger.info("Database connected and tables ready")
+
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Application shutdown event"""
+    """Application shutdown event — dispose DB engine"""
     logger.info("Shutting down Literature Review Assistant API")
+    await engine.dispose()
+    logger.info("Database engine disposed")
 
 
 @app.exception_handler(Exception)

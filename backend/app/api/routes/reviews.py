@@ -2,12 +2,15 @@
 
 import logging
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.settings import get_settings
+from app.db.database import get_db
+from app.db.review_repository import ReviewRepository, orm_to_response
 from app.models.requests import CreateReviewRequest
 from app.models.responses import ReviewResponse
-from app.services import ReviewService, get_session_manager
+from app.services import ReviewService
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -16,7 +19,8 @@ settings = get_settings()
 
 @router.post("/reviews", response_model=ReviewResponse, status_code=201)
 async def create_review(
-    request: CreateReviewRequest, background_tasks: BackgroundTasks
+    request: CreateReviewRequest,
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Create a new literature review
@@ -24,58 +28,39 @@ async def create_review(
     Creates a review session and starts the AutoGen orchestrator in the background.
     Use the returned ID to connect to the streaming endpoint.
     """
-    session_manager = get_session_manager()
+    repo = ReviewRepository(db)
 
-    # Create session
     papers_limit = settings.papers_per_review
     model = settings.default_model
-    session = session_manager.create_session(
+
+    review = await repo.create_review(
         topic=request.topic,
         papers_limit=papers_limit,
         model=model,
     )
 
-    logger.info(f"Created review session {session.id}")
+    logger.info(f"Created review session {review.id}")
 
-    # Start review in background
-    async def run_review_background():
-        """Run review processing in background"""
-        try:
-            review_service = ReviewService(session_manager)
-            # Consume the generator without yielding (background task)
-            async for _ in review_service.start_review(
-                session_id=session.id,
-                topic=request.topic,
-                papers_limit=papers_limit,
-                model=model,
-            ):
-                pass  # Messages are stored in session manager
-        except Exception as e:
-            logger.error(f"Error in background review {session.id}: {e}", exc_info=True)
-
-    # Schedule background task
-    background_tasks.add_task(run_review_background)
-
-    return session
+    return orm_to_response(review)
 
 
 @router.get("/reviews/{review_id}", response_model=ReviewResponse)
-async def get_review(review_id: str):
+async def get_review(review_id: str, db: AsyncSession = Depends(get_db)):
     """Get a review by ID"""
-    session_manager = get_session_manager()
-    session = session_manager.get_session(review_id)
+    repo = ReviewRepository(db)
+    review = await repo.get_review(review_id)
 
-    if not session:
+    if not review:
         raise HTTPException(status_code=404, detail="Review not found")
 
-    return session
+    return orm_to_response(review)
 
 
 @router.delete("/reviews/{review_id}", status_code=204)
-async def delete_review(review_id: str):
+async def delete_review(review_id: str, db: AsyncSession = Depends(get_db)):
     """Delete a review"""
-    session_manager = get_session_manager()
-    deleted = session_manager.delete_session(review_id)
+    repo = ReviewRepository(db)
+    deleted = await repo.delete_review(review_id)
 
     if not deleted:
         raise HTTPException(status_code=404, detail="Review not found")
@@ -84,8 +69,10 @@ async def delete_review(review_id: str):
 
 
 @router.get("/reviews", response_model=list[ReviewResponse])
-async def list_reviews(limit: int = 20, offset: int = 0):
+async def list_reviews(
+    limit: int = 20, offset: int = 0, db: AsyncSession = Depends(get_db)
+):
     """List recent reviews"""
-    session_manager = get_session_manager()
-    sessions = session_manager.list_sessions(limit=limit, offset=offset)
-    return sessions
+    repo = ReviewRepository(db)
+    reviews = await repo.list_reviews(limit=limit, offset=offset)
+    return [orm_to_response(r) for r in reviews]

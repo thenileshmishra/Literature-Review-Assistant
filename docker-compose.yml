@@ -1,6 +1,27 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:15
+    container_name: litrev-postgres
+    environment:
+      POSTGRES_DB: litrev
+      POSTGRES_USER: litrev_admin
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-localdevpassword}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litrev_admin -d litrev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - litrev-network
+
   backend:
     build:
       context: ./backend
@@ -17,8 +38,12 @@ services:
       - DEFAULT_PAPERS=${DEFAULT_PAPERS:-5}
       - API_PORT=8000
       - CORS_ORIGINS=http://localhost:3000,http://frontend:3000
+      - DATABASE_URL=postgresql+asyncpg://litrev_admin:${DB_PASSWORD:-localdevpassword}@postgres:5432/litrev
     env_file:
       - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -45,6 +70,9 @@ services:
     restart: unless-stopped
     networks:
       - litrev-network
+
+volumes:
+  pgdata:
 
 networks:
   litrev-network:
