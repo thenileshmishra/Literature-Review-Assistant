@@ -3,12 +3,13 @@ litrev_orchestrator.py
 ======================
 Main orchestrator for literature review generation.
 
-Provides the high-level API for running literature reviews,
-coordinating the team, and managing the review workflow.
+Coordinates planning, team execution, and progress streaming.
 """
 
 from __future__ import annotations
 
+import json
+import re
 from collections.abc import AsyncGenerator
 
 from autogen_agentchat.conditions import MaxMessageTermination
@@ -25,24 +26,35 @@ logger = get_logger(__name__)
 
 
 # ===============================================================
-# LITERATURE REVIEW ORCHESTRATOR
+# OUTPUT GUARDRAIL
 # ===============================================================
+
+
+def validate_review_output(raw_message: str) -> str | None:
+    """
+    Guardrail that validates the summarizer's output.
+
+    Returns an error string if the output is invalid, None if OK.
+    """
+    # Must have some minimum content
+    if len(raw_message.strip()) < 100:
+        return "Review is too short — must be at least 100 characters."
+
+    # Must contain at least one markdown link (source citation)
+    if not re.search(r"\[.+?\]\(.+?\)", raw_message):
+        return "Review must include at least one source citation as a markdown link."
+
+    return None
 
 
 class LitRevOrchestrator:
     """
     Main orchestrator for literature review generation.
 
-    Provides the primary interface for running literature reviews
-    with configurable parameters and streaming output.
-
     Workflow:
-        1. PlannerAgent decomposes the topic into sub-queries (pre-step).
-        2. LitRevTeam (Search → Summarize → Critic) runs with the enriched task.
-
-    Attributes:
-        settings: Application settings
-        model: LLM model to use
+        1. PlannerAgent decomposes the topic into sub-queries.
+        2. LitRevTeam (SelectorGroupChat: Search → Summarize → Critic) runs.
+        3. Output guardrails validate the final review.
     """
 
     def __init__(
@@ -50,16 +62,6 @@ class LitRevOrchestrator:
         model: str | None = None,
         settings: Settings | None = None,
     ) -> None:
-        """
-        Initialize the orchestrator.
-
-        Args:
-            model: Optional LLM model override
-            settings: Optional settings override
-
-        Raises:
-            ConfigurationError: If API key is missing
-        """
         self.settings = settings or get_settings()
         self.model = model or self.settings.default_model
 
@@ -73,82 +75,84 @@ class LitRevOrchestrator:
 
         logger.info(f"LitRevOrchestrator initialized with model={self.model}")
 
-    # ===============================================================
-    # MAIN API
-    # ===============================================================
-
     async def run_review(
         self,
         topic: str,
         num_papers: int = 5,
     ) -> AsyncGenerator[str, None]:
         """
-        Run a literature review on the given topic.
-
-        First runs a PlannerAgent to decompose the topic into sub-queries,
-        then passes the enriched task to the LitRevTeam (Search → Summarize
-        → Critic). Streams all messages as they are generated.
-
-        Args:
-            topic: Research topic to review
-            num_papers: Deprecated (fixed to settings.papers_per_review)
-
-        Yields:
-            str: Streaming message content as "source: content"
-
-        Example:
-            >>> orchestrator = LitRevOrchestrator()
-            >>> async for msg in orchestrator.run_review("neural networks"):
-            ...     print(msg)
+        Run a deep research review on the given topic with progress events.
         """
         papers_limit = self.settings.papers_per_review
         logger.info(f"Starting review: topic='{topic}', papers={papers_limit}")
 
-        # Step 1: Decompose topic into sub-queries
+        # Progress: planning
+        yield "progress: Planning research strategy..."
+
+        # Step 1: Plan
         sub_queries_json = await self._plan_topic(topic)
         if sub_queries_json:
             yield f"planner: {sub_queries_json}"
+            # Parse for progress display
+            try:
+                queries = json.loads(sub_queries_json)
+                yield f"progress: Researching {len(queries)} sub-topics across academic and web sources..."
+            except (json.JSONDecodeError, TypeError):
+                yield "progress: Searching academic and web sources..."
+        else:
+            yield "progress: Searching academic and web sources..."
 
         # Step 2: Build enriched task prompt
         if sub_queries_json:
             task_prompt = (
                 f"Research topic: '{topic}'\n"
                 f"Planned sub-queries: {sub_queries_json}\n"
-                f"Search for papers on each sub-query using all available tools, "
+                f"Search for sources on each sub-query using ALL available tools "
+                f"(arxiv, semantic scholar, web search, and read key pages), "
                 f"combine and deduplicate results, then return the {papers_limit} "
-                f"most relevant papers."
+                f"most relevant sources."
             )
         else:
             task_prompt = (
-                f"Conduct a literature review on '{topic}' "
-                f"and return {papers_limit} papers."
+                f"Conduct a deep research review on '{topic}'. "
+                f"Use all search tools (academic and web) and read key pages. "
+                f"Return {papers_limit} high-quality sources."
             )
 
         # Step 3: Run the multi-agent team
         team = LitRevTeam(
             model=self.model,
             api_key=self.settings.openai_api_key,
+            tavily_api_key=self.settings.tavily_api_key,
         )
 
+        last_summarizer_msg = ""
         async for msg in team.run_stream(task=task_prompt):
+            # Track summarizer output for guardrail check
+            if msg.startswith("summarizer:"):
+                last_summarizer_msg = msg.split(": ", 1)[1] if ": " in msg else ""
+
+            # Emit progress hints based on which agent is speaking
+            if msg.startswith("search_agent:"):
+                yield "progress: Searching and reading sources..."
+            elif msg.startswith("summarizer:"):
+                yield "progress: Writing research report..."
+            elif msg.startswith("critic:"):
+                yield "progress: Reviewing report quality..."
+
             yield msg
+
+        # Step 4: Output guardrail — validate final review
+        if last_summarizer_msg:
+            guardrail_error = validate_review_output(last_summarizer_msg)
+            if guardrail_error:
+                logger.warning(f"Output guardrail failed: {guardrail_error}")
+                yield f"guardrail: {guardrail_error}"
 
         logger.info(f"Review completed for topic: {topic}")
 
-    # ===============================================================
-    # INTERNAL HELPERS
-    # ===============================================================
-
     async def _plan_topic(self, topic: str) -> str | None:
-        """
-        Run the PlannerAgent to decompose the topic into sub-queries.
-
-        Args:
-            topic: Research topic to decompose
-
-        Returns:
-            str | None: JSON array string of sub-queries, or None on failure
-        """
+        """Run the PlannerAgent to decompose the topic into sub-queries."""
         try:
             planner = PlannerAgent(
                 model=self.model,

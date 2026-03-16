@@ -60,6 +60,16 @@ class ReviewService:
                     # Determine message type
                     message_type = self._determine_message_type(source, content)
 
+                    # Progress and guardrail events are UI-only, don't store in DB
+                    if message_type in ("progress", "guardrail"):
+                        yield {
+                            "source": source,
+                            "content": content,
+                            "timestamp": datetime.utcnow().isoformat(),
+                            "message_type": message_type,
+                        }
+                        continue
+
                     # Store in database
                     await self.repo.add_message(
                         review_id=session_id,
@@ -132,7 +142,11 @@ class ReviewService:
 
     def _determine_message_type(self, source: str, content: str) -> str:
         """Determine message type based on source and content"""
-        if source == "search_agent":
+        if source == "progress":
+            return "progress"
+        elif source == "guardrail":
+            return "guardrail"
+        elif source == "search_agent":
             return "search"
         elif source == "summarizer":
             return "summary"

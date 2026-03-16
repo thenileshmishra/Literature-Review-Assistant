@@ -1,10 +1,10 @@
 """
 litrev_team.py
 ==============
-Literature review team coordinating search, summarizer, and critic agents.
+Literature review team using SelectorGroupChat for dynamic agent routing.
 
-Uses AutoGen's RoundRobinGroupChat to orchestrate the three-agent
-workflow for producing and refining literature reviews.
+Uses AutoGen's SelectorGroupChat so the LLM dynamically picks which agent
+speaks next, enabling iterative search-summarize-critique loops.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from collections.abc import AsyncGenerator
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.conditions import MaxMessageTermination, TextMentionTermination
 from autogen_agentchat.messages import TextMessage
-from autogen_agentchat.teams import RoundRobinGroupChat
+from autogen_agentchat.teams import SelectorGroupChat
 
 from app.agents.critic_agent import CriticAgent
 from app.agents.search_agent import SearchAgent
@@ -26,41 +26,35 @@ from app.teams.base import BaseTeam
 logger = get_logger(__name__)
 
 
-# ===============================================================
-# LITERATURE REVIEW TEAM
-# ===============================================================
-
-
 class LitRevTeam(BaseTeam):
     """
-    Three-agent team for literature review generation with reflection.
+    Three-agent team using SelectorGroupChat for dynamic routing.
 
-    Coordinates a search agent, summarizer agent, and critic agent using
-    RoundRobinGroupChat. The critic reviews the draft and provides
-    feedback; the summarizer revises once before critic approves.
-
-    Attributes:
-        search_agent: Agent for searching papers
-        summarizer_agent: Agent for summarizing papers
-        critic_agent: Agent for reviewing and scoring the draft
-        model: LLM model identifier
-        api_key: API key for model access
+    Instead of fixed round-robin, an LLM selector picks the next agent
+    based on context — allowing multiple search rounds before summarization,
+    and routing back to search if the critic says coverage is lacking.
     """
+
+    SELECTOR_PROMPT = (
+        "You are the orchestrator of a research team. Given the conversation so far, "
+        "pick the next agent to speak.\n\n"
+        "Rules:\n"
+        "- If no search has been done yet, pick search_agent.\n"
+        "- If search results are available but no review has been written, pick summarizer.\n"
+        "- If a review draft exists but hasn't been critiqued, pick critic.\n"
+        "- If the critic says coverage is lacking or more sources are needed, pick search_agent.\n"
+        "- If the critic gave revision feedback (not about missing sources), pick summarizer.\n"
+        "- If the critic said APPROVED, stop.\n"
+        "- Never pick the same agent twice in a row unless it's search_agent gathering more sources."
+    )
 
     def __init__(
         self,
         model: str,
         api_key: str,
-        max_turns: int = 6,
+        tavily_api_key: str = "",
+        max_turns: int = 12,
     ) -> None:
-        """
-        Initialize the literature review team.
-
-        Args:
-            model: LLM model to use for agents
-            api_key: OpenAI API key
-            max_turns: Maximum conversation turns (default 6 for one reflection cycle)
-        """
         super().__init__(
             name="litrev_team",
             max_turns=max_turns,
@@ -69,39 +63,23 @@ class LitRevTeam(BaseTeam):
         self.model = model
         self.api_key = api_key
 
-        self._search_agent = SearchAgent(model=model, api_key=api_key)
+        self._search_agent = SearchAgent(
+            model=model, api_key=api_key, tavily_api_key=tavily_api_key,
+        )
         self._summarizer_agent = SummarizerAgent(model=model, api_key=api_key)
         self._critic_agent = CriticAgent(model=model, api_key=api_key)
-        self._team: RoundRobinGroupChat | None = None
+        self._team: SelectorGroupChat | None = None
 
         logger.debug(f"LitRevTeam initialized with model={model}")
 
-    # ===============================================================
-    # IMPLEMENTATION
-    # ===============================================================
-
     def _get_participants(self) -> list[AssistantAgent]:
-        """
-        Get the list of agent participants.
-
-        Returns:
-            List[AssistantAgent]: Built search, summarizer, and critic agents
-        """
         return [
             self._search_agent.build(),
             self._summarizer_agent.build(),
             self._critic_agent.build(),
         ]
 
-    def build(self) -> RoundRobinGroupChat:
-        """
-        Build and return the RoundRobinGroupChat team.
-
-        Termination: stops when critic says APPROVED or after max_turns.
-
-        Returns:
-            RoundRobinGroupChat: Configured team instance
-        """
+    def build(self) -> SelectorGroupChat:
         if self._team is not None:
             return self._team
 
@@ -109,30 +87,20 @@ class LitRevTeam(BaseTeam):
 
         termination = TextMentionTermination("APPROVED") | MaxMessageTermination(self.max_turns)
 
-        self._team = RoundRobinGroupChat(
+        self._team = SelectorGroupChat(
             participants=participants,
             termination_condition=termination,
+            model_client=self._search_agent._build_llm_client(),
+            selector_prompt=self.SELECTOR_PROMPT,
         )
 
-        logger.info(f"Built LitRevTeam with {len(participants)} agents")
+        logger.info(f"Built LitRevTeam (SelectorGroupChat) with {len(participants)} agents")
         return self._team
 
     async def run_stream(
         self,
         task: str,
     ) -> AsyncGenerator[str, None]:
-        """
-        Execute the team with streaming output.
-
-        Args:
-            task: The task prompt for the team
-
-        Yields:
-            str: Formatted message strings as "source: content"
-
-        Raises:
-            TeamError: If team execution fails
-        """
         team = self.build()
 
         logger.info(f"Starting team execution: {task[:50]}...")

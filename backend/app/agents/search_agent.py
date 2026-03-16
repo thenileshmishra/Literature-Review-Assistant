@@ -1,11 +1,10 @@
 """
 search_agent.py
 ===============
-Search agent for crafting queries and fetching papers from multiple sources.
+Search agent for crafting queries and fetching from multiple sources.
 
-Responsible for interpreting planner sub-queries, calling both arXiv
-and Semantic Scholar, deduplicating results, and selecting the most
-relevant papers for the summarizer.
+Searches academic papers (arXiv, Semantic Scholar) and the general web
+(Tavily), with the ability to read full web pages for deeper context.
 """
 
 from __future__ import annotations
@@ -16,6 +15,8 @@ from app.agents.base import BaseAgent
 from app.core.logging_config import get_logger
 from app.tools.arxiv_tool import ArxivSearchTool
 from app.tools.semantic_scholar_tool import SemanticScholarTool
+from app.tools.tavily_tool import TavilySearchTool
+from app.tools.web_reader_tool import WebReaderTool
 
 if TYPE_CHECKING:
     pass
@@ -23,81 +24,65 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-# ===============================================================
-# SEARCH AGENT
-# ===============================================================
-
-
 class SearchAgent(BaseAgent):
     """
-    Agent specialized in searching multiple academic sources for papers.
+    Agent specialized in searching multiple sources for research material.
 
-    Uses arXiv for preprints and cutting-edge research, and Semantic
-    Scholar for broader peer-reviewed coverage. Deduplicates results
-    by title before passing to the summarizer.
-
-    Attributes:
-        arxiv_tool: The arXiv search tool instance
-        semantic_scholar_tool: The Semantic Scholar search tool instance
+    Uses arXiv and Semantic Scholar for academic papers, Tavily for
+    general web search, and a web reader to extract full page content.
     """
 
     DEFAULT_SYSTEM_MESSAGE = (
-        "You are an expert research assistant specialized in finding academic papers.\n\n"
-        "You have two search tools: arxiv_search and semantic_scholar_search.\n"
-        "When given a topic or a list of sub-queries:\n"
-        "1. Use arxiv_search for preprints and recent cutting-edge research\n"
-        "2. Use semantic_scholar_search for peer-reviewed papers and broader coverage\n"
-        "Combine all results, remove duplicates by title, and pass the top papers "
-        "as concise JSON to the summarizer.\n\n"
-        "When selecting papers:\n"
-        "- Prioritize recent, high-impact papers\n"
-        "- Ensure diversity in approaches and methodologies\n"
-        "- Focus on papers directly relevant to the topic"
+        "You are an expert research assistant specialized in deep research.\n\n"
+        "You have four tools:\n"
+        "1. arxiv_search — for preprints and cutting-edge academic research\n"
+        "2. semantic_scholar_search — for peer-reviewed papers and broader academic coverage\n"
+        "3. web_search — for blogs, documentation, news articles, and general web sources\n"
+        "4. read_webpage — to read the full content of a specific URL\n\n"
+        "When given a topic or sub-queries:\n"
+        "1. Search academic sources (arxiv + semantic scholar) for foundational papers\n"
+        "2. Search the web for recent articles, blog posts, and documentation\n"
+        "3. Use read_webpage on the most promising URLs to get deeper content\n"
+        "4. Combine all results, remove duplicates, and return the top sources as JSON\n\n"
+        "Each source should include: title, url/pdf_url, authors (if available), "
+        "date (if available), and a brief summary of key findings.\n"
+        "Prioritize recent, high-impact sources with diverse perspectives."
     )
 
     def __init__(
         self,
         model: str,
         api_key: str,
+        tavily_api_key: str = "",
         arxiv_tool: ArxivSearchTool | None = None,
         semantic_scholar_tool: SemanticScholarTool | None = None,
     ) -> None:
-        """
-        Initialize the search agent.
-
-        Args:
-            model: LLM model to use
-            api_key: OpenAI API key
-            arxiv_tool: Optional pre-configured arXiv tool
-            semantic_scholar_tool: Optional pre-configured Semantic Scholar tool
-        """
         self.arxiv_tool = arxiv_tool or ArxivSearchTool()
         self.semantic_scholar_tool = semantic_scholar_tool or SemanticScholarTool()
+        self.web_reader_tool = WebReaderTool()
+
+        tools = [
+            self.arxiv_tool.as_function_tool(),
+            self.semantic_scholar_tool.as_function_tool(),
+            self.web_reader_tool.as_function_tool(),
+        ]
+
+        # Only add Tavily if API key is provided
+        if tavily_api_key:
+            self.tavily_tool = TavilySearchTool(api_key=tavily_api_key)
+            tools.append(self.tavily_tool.as_function_tool())
 
         super().__init__(
             name="search_agent",
-            description="Searches arXiv and Semantic Scholar, then returns deduplicated candidate papers.",
+            description="Searches academic and web sources, reads pages, and returns deduplicated results.",
             system_message=self.DEFAULT_SYSTEM_MESSAGE,
             model=model,
             api_key=api_key,
-            tools=[
-                self.arxiv_tool.as_function_tool(),
-                self.semantic_scholar_tool.as_function_tool(),
-            ],
+            tools=tools,
             reflect_on_tool_use=True,
         )
 
-        logger.debug("SearchAgent initialized with arxiv + semantic_scholar tools")
-
-    # ===============================================================
-    # IMPLEMENTATION
-    # ===============================================================
+        logger.debug("SearchAgent initialized with academic + web tools")
 
     def _get_system_message(self) -> str:
-        """
-        Get the system message for the search agent.
-
-        Returns:
-            str: System prompt for multi-source paper searching
-        """
         return self.DEFAULT_SYSTEM_MESSAGE

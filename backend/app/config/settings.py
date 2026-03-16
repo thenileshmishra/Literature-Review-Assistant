@@ -47,6 +47,11 @@ class Settings(BaseSettings):
         description="OpenAI API key for model access",
     )
 
+    tavily_api_key: str = Field(
+        default="",
+        description="Tavily API key for web search",
+    )
+
     default_model: str = Field(
         default="gpt-4o-mini",
         description="Default LLM model to use",
