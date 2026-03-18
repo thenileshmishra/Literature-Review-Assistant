@@ -27,8 +27,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const me = await getMe()
         setUser(me)
-      } catch {
-        clearToken()
+      } catch (err: any) {
+        // Only clear token on auth errors (401), not on network/server errors
+        if (err?.response?.status === 401) {
+          clearToken()
+        }
       } finally {
         setIsLoading(false)
       }

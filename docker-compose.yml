@@ -61,15 +61,32 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://agent.nileshmishra.info}
     container_name: litrev-frontend
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       - NODE_ENV=production
     depends_on:
       backend:
         condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - litrev-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: litrev-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+    depends_on:
+      - frontend
+      - backend
     restart: unless-stopped
     networks:
       - litrev-network
